@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock } from 'lucide-react'
 
@@ -18,6 +18,8 @@ interface LoginFormProps {
 
 export function LoginForm({ available, hasAny }: LoginFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const justRegistered = searchParams.get('registered') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -29,11 +31,14 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
     setLoading(true)
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 15000)
+      )
+
+      const result = await Promise.race([
+        signIn('credentials', { email, password, redirect: false }),
+        timeout,
+      ]) as Awaited<ReturnType<typeof signIn>>
 
       if (result?.error) {
         setError('Invalid email or password')
@@ -41,10 +46,13 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
         return
       }
 
-      router.refresh()
-      router.push('/')
-    } catch {
-      setError('Something went wrong. Please try again.')
+      window.location.href = '/'
+    } catch (err) {
+      if (err instanceof Error && err.message === 'timeout') {
+        setError('Login timed out. Please try again.')
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
       setLoading(false)
     }
   }
@@ -103,6 +111,12 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
             <div className="relative flex justify-center">
               <span className="px-3 bg-white text-xs text-[#8A7E72]">or</span>
             </div>
+          </div>
+        )}
+
+        {justRegistered && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+            Account created! Sign in below.
           </div>
         )}
 

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User } from 'lucide-react'
@@ -35,26 +34,8 @@ export default function SignupPage() {
         return
       }
 
-      // Auto sign in after successful signup
-      try {
-        const result = await signIn('credentials', {
-          email,
-          password,
-          redirect: false,
-        })
-
-        if (result?.error) {
-          // Account created but auto-login failed — send to login page
-          router.push('/login')
-          return
-        }
-
-        router.refresh()
-        router.push('/')
-      } catch {
-        // Account created but sign-in errored — send to login page
-        router.push('/login')
-      }
+      // Account created — redirect to login
+      router.push('/login?registered=1')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setLoading(false)
