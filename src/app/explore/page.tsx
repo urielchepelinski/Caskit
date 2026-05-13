@@ -3,6 +3,7 @@ import { expressions, bottles, distilleries } from '@/db/schema'
 import { eq, desc, isNotNull } from 'drizzle-orm'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { BottlePlaceholder } from '@/components/bottle/bottle-placeholder'
 import Link from 'next/link'
 import { Compass, Star, Globe, TrendingUp } from 'lucide-react'
 
@@ -78,7 +79,7 @@ export default async function ExplorePage() {
                     className="h-[90%] w-auto object-contain"
                   />
                 ) : (
-                  <div className="w-8 h-16 bg-accent/20 rounded" />
+                  <BottlePlaceholder className="w-10 h-20" />
                 )}
               </div>
               <div className="flex-1 min-w-0">

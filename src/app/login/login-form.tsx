@@ -28,19 +28,25 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
     setError('')
     setLoading(true)
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
 
-    if (result?.error) {
-      setError('Invalid email or password')
+      if (result?.error) {
+        setError('Invalid email or password')
+        setLoading(false)
+        return
+      }
+
+      router.refresh()
+      router.push('/')
+    } catch {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
-      return
     }
-
-    router.push('/')
   }
 
   if (!hasAny) {

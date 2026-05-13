@@ -49,6 +49,7 @@ export default function SignupPage() {
           return
         }
 
+        router.refresh()
         router.push('/')
       } catch {
         // Account created but sign-in errored — send to login page

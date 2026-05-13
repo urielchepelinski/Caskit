@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
 import { submitReview, getExpressionReviews } from '@/lib/community'
 
 export async function GET(request: NextRequest) {
@@ -19,11 +20,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
-  if (!userId) {
+  const session = await auth()
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const userId = session.user.id
   const body = await request.json()
   const { expressionId, score, nose, palate, finish, liked } = body
 
@@ -35,14 +37,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Score must be between 1 and 100' }, { status: 400 })
   }
 
-  const review = await submitReview(userId, {
-    expressionId,
-    score,
-    nose,
-    palate,
-    finish,
-    liked,
-  })
+  try {
+    const review = await submitReview(userId, {
+      expressionId,
+      score,
+      nose,
+      palate,
+      finish,
+      liked,
+    })
 
-  return NextResponse.json(review, { status: 201 })
+    return NextResponse.json(review, { status: 201 })
+  } catch (error) {
+    console.error('Failed to submit review:', error)
+    return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 })
+  }
 }

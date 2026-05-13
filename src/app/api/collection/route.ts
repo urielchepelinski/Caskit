@@ -1,25 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
 import { db } from '@/db'
 import { collections } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
-export async function GET(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
-  if (!userId) {
+export async function GET() {
+  const session = await auth()
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const userCollections = await db.select()
-    .from(collections)
-    .where(eq(collections.userId, userId))
-    .orderBy(collections.addedAt)
+  try {
+    const userCollections = await db.select()
+      .from(collections)
+      .where(eq(collections.userId, session.user.id))
+      .orderBy(collections.addedAt)
 
-  return NextResponse.json(userCollections)
+    return NextResponse.json(userCollections)
+  } catch (error) {
+    console.error('Failed to load collection:', error)
+    return NextResponse.json({ error: 'Failed to load collection' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
-  if (!userId) {
+  const session = await auth()
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -36,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const [item] = await db.insert(collections).values({
-      userId,
+      userId: session.user.id,
       expressionId,
       status,
       purchasePrice,
@@ -55,8 +61,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
-  if (!userId) {
+  const session = await auth()
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -69,7 +75,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     await db.delete(collections).where(
-      and(eq(collections.userId, userId), eq(collections.expressionId, Number(expressionId)))
+      and(eq(collections.userId, session.user.id), eq(collections.expressionId, Number(expressionId)))
     )
 
     return NextResponse.json({ success: true })

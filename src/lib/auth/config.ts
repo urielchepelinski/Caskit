@@ -87,6 +87,7 @@ export const availableProviders = {
 
 export const authConfig: NextAuthConfig = {
   providers,
+  trustHost: true,
   session: { strategy: 'jwt' },
   secret: process.env.AUTH_SECRET || 'caskit-prod-fallback-change-me',
   pages: {

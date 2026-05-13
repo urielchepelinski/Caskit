@@ -1,10 +1,11 @@
 import { db } from '@/db'
 import { expressions, bottles, distilleries } from '@/db/schema'
-import { eq, desc, ilike, isNotNull } from 'drizzle-orm'
+import { eq, desc, ilike, isNotNull, sql, count } from 'drizzle-orm'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { BottlePlaceholder } from '@/components/bottle/bottle-placeholder'
 import Link from 'next/link'
-import { ArrowLeft, Star } from 'lucide-react'
+import { ArrowLeft, Star, MapPin } from 'lucide-react'
 
 interface Props {
   params: Promise<{ slug: string[] }>
@@ -31,6 +32,11 @@ const REGION_NAMES: Record<string, string> = {
 export default async function ExploreSubPage({ params }: Props) {
   const { slug } = await params
   const [first, second] = slug
+
+  // Special case: distilleries page has its own render path
+  if (first === 'distilleries') {
+    return <DistilleriesPage />
+  }
 
   let title = 'Explore'
   let results: Array<{
@@ -74,14 +80,6 @@ export default async function ExploreSubPage({ params }: Props) {
         .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
         .orderBy(desc(expressions.avgCommunityScore))
         .limit(30)
-    } else if (first === 'distilleries') {
-      title = 'All Distilleries'
-      results = await db.select({ expression: expressions, bottle: bottles, distillery: distilleries })
-        .from(expressions)
-        .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
-        .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
-        .orderBy(desc(expressions.avgCommunityScore))
-        .limit(30)
     } else if (CATEGORY_NAMES[first]) {
       title = CATEGORY_NAMES[first]
       results = await db.select({ expression: expressions, bottle: bottles, distillery: distilleries })
@@ -93,12 +91,11 @@ export default async function ExploreSubPage({ params }: Props) {
         .limit(20)
     } else {
       title = first.charAt(0).toUpperCase() + first.slice(1)
-      const searchTerm = `%${first}%`
       results = await db.select({ expression: expressions, bottle: bottles, distillery: distilleries })
         .from(expressions)
         .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
         .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
-        .where(ilike(bottles.type, searchTerm))
+        .where(ilike(bottles.type, `%${first}%`))
         .orderBy(desc(expressions.avgCommunityScore))
         .limit(20)
     }
@@ -111,7 +108,7 @@ export default async function ExploreSubPage({ params }: Props) {
       <Header />
       <div className="px-5 mb-4">
         <div className="flex items-center gap-3 mb-4">
-          <Link href="/explore" className="p-1">
+          <Link href="/explore" className="p-2">
             <ArrowLeft className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />
           </Link>
           <h1 className="text-xl font-display font-bold text-text-primary">{title}</h1>
@@ -133,11 +130,13 @@ export default async function ExploreSubPage({ params }: Props) {
                 <div className="w-7 h-7 flex-shrink-0 rounded-full bg-surface-light flex items-center justify-center">
                   <span className="text-xs font-bold text-accent">{index + 1}</span>
                 </div>
-                {expression.imageUrl && (
-                  <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-surface-light flex items-center justify-center">
+                <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-surface-light flex items-center justify-center">
+                  {expression.imageUrl ? (
                     <img src={expression.imageUrl} alt={expression.name} className="h-[85%] w-auto object-contain" />
-                  </div>
-                )}
+                  ) : (
+                    <BottlePlaceholder className="w-6 h-12" />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-text-primary truncate">{expression.name}</h3>
                   <p className="text-xs text-text-secondary">{dist.name}</p>
@@ -150,6 +149,81 @@ export default async function ExploreSubPage({ params }: Props) {
                     </span>
                   </div>
                 )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+      <BottomNav active="explore" />
+    </div>
+  )
+}
+
+async function DistilleriesPage() {
+  let distilleryList: Array<{
+    distillery: typeof distilleries.$inferSelect
+    bottleCount: number
+  }> = []
+
+  try {
+    const rows = await db.select({
+      distillery: distilleries,
+      bottleCount: count(bottles.id),
+    })
+      .from(distilleries)
+      .leftJoin(bottles, eq(bottles.distilleryId, distilleries.id))
+      .groupBy(distilleries.id)
+      .orderBy(distilleries.name)
+      .limit(50)
+
+    distilleryList = rows.map(r => ({ distillery: r.distillery, bottleCount: Number(r.bottleCount) }))
+  } catch {
+    distilleryList = []
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Header />
+      <div className="px-5 mb-4">
+        <div className="flex items-center gap-3 mb-4">
+          <Link href="/explore" className="p-2">
+            <ArrowLeft className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />
+          </Link>
+          <h1 className="text-xl font-display font-bold text-text-primary">All Distilleries</h1>
+        </div>
+
+        {distilleryList.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-text-muted text-sm">No distilleries found</p>
+            <Link href="/explore" className="text-accent text-sm mt-2 inline-block">Back to Explore</Link>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {distilleryList.map(({ distillery: d, bottleCount }) => (
+              <Link
+                key={d.id}
+                href={`/distillery/${d.slug}`}
+                className="flex gap-3 p-3 bg-surface rounded-card border border-border items-center"
+              >
+                <div className="w-12 h-12 flex-shrink-0 rounded-full bg-surface-light flex items-center justify-center overflow-hidden">
+                  {d.logoUrl ? (
+                    <img src={d.logoUrl} alt={d.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-bold text-accent">{d.name.charAt(0)}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-text-primary truncate">{d.name}</h3>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3 text-text-muted" />
+                    <p className="text-xs text-text-secondary">
+                      {d.region ? `${d.region}, ` : ''}{d.country}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <span className="text-xs text-text-muted">{bottleCount} {bottleCount === 1 ? 'bottle' : 'bottles'}</span>
+                </div>
               </Link>
             ))}
           </div>
