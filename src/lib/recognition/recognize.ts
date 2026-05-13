@@ -20,7 +20,7 @@ export async function recognizeBottle(imageBuffer: Buffer): Promise<RecognitionR
 async function tryHashCache(imageBuffer: Buffer): Promise<RecognitionResult | null> {
   try {
     // Dynamic import of image-hash to avoid crash if not installed
-    const { imageHash } = await import('image-hash')
+    const { imageHash } = await import(/* webpackIgnore: true */ 'image-hash')
     const hash: string = await new Promise((resolve, reject) => {
       imageHash({ data: imageBuffer }, 16, true, (err: Error | null, data: string) => {
         if (err) reject(err)
