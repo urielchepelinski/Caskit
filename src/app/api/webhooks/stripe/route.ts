@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/payments/stripe'
+import { getStripeClient } from '@/lib/payments/stripe'
 import { db } from '@/db'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
 
   let event: Stripe.Event
   try {
+    const stripe = getStripeClient()
     event = stripe.webhooks.constructEvent(
       body,
       signature,
