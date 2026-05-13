@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 import { FlavorBar } from '@/components/ui/flavor-bar'
 import { SectionLabel } from '@/components/ui/section-label'
 import { BottomNav } from '@/components/layout/bottom-nav'
-import { BottlePlaceholder } from '@/components/bottle/bottle-placeholder'
+import { BottleImage } from '@/components/bottle/bottle-image'
 import { ArrowLeft, Share2, Plus, Pencil } from 'lucide-react'
 import Link from 'next/link'
 
@@ -53,15 +53,12 @@ export default async function BottleDetailPage({ params }: Props) {
       <div className="flex flex-col items-center px-5 py-5 relative">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center_top,rgba(200,151,76,0.08),transparent_70%)]" />
         <div className="w-[120px] h-[200px] mb-5 relative z-10">
-          {expression.imageUrl ? (
-            <img
-              src={expression.imageUrl}
-              alt={expression.name}
-              className="w-full h-full object-contain drop-shadow-2xl"
-            />
-          ) : (
-            <BottlePlaceholder className="w-[80px] h-[160px] mx-auto" />
-          )}
+          <BottleImage
+            src={expression.imageUrl}
+            alt={expression.name}
+            className="w-full h-full object-contain drop-shadow-2xl"
+            placeholderClassName="w-[80px] h-[160px] mx-auto"
+          />
         </div>
         <h1 className="font-display text-2xl font-bold text-center mb-1.5 relative z-10">
           {expression.name}

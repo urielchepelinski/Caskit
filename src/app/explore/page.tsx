@@ -3,7 +3,7 @@ import { expressions, bottles, distilleries } from '@/db/schema'
 import { eq, desc, isNotNull } from 'drizzle-orm'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
-import { BottlePlaceholder } from '@/components/bottle/bottle-placeholder'
+import { BottleImage } from '@/components/bottle/bottle-image'
 import Link from 'next/link'
 import { Compass, Star, Globe, TrendingUp } from 'lucide-react'
 
@@ -72,15 +72,12 @@ export default async function ExplorePage() {
             </div>
             <div className="flex items-center gap-4">
               <div className="w-20 h-28 flex-shrink-0 rounded-sm overflow-hidden bg-surface-light flex items-center justify-center">
-                {featured.expression.imageUrl ? (
-                  <img
-                    src={featured.expression.imageUrl}
-                    alt={featured.expression.name}
-                    className="h-[90%] w-auto object-contain"
-                  />
-                ) : (
-                  <BottlePlaceholder className="w-10 h-20" />
-                )}
+                <BottleImage
+                  src={featured.expression.imageUrl}
+                  alt={featured.expression.name}
+                  className="h-[90%] w-auto object-contain"
+                  placeholderClassName="w-10 h-20"
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] text-accent font-medium uppercase tracking-wide mb-1">
@@ -149,11 +146,9 @@ export default async function ExplorePage() {
                 <div className="w-7 h-7 flex-shrink-0 rounded-full bg-surface-light flex items-center justify-center">
                   <span className="text-xs font-bold text-accent">{index + 1}</span>
                 </div>
-                {expression.imageUrl && (
-                  <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-surface-light flex items-center justify-center">
-                    <img src={expression.imageUrl} alt={expression.name} className="h-[85%] w-auto object-contain" />
-                  </div>
-                )}
+                <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-surface-light flex items-center justify-center">
+                  <BottleImage src={expression.imageUrl} alt={expression.name} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-text-primary truncate">{expression.name}</h3>
                   <p className="text-xs text-text-secondary">{distillery.name}</p>

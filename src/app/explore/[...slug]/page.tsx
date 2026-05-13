@@ -3,7 +3,7 @@ import { expressions, bottles, distilleries } from '@/db/schema'
 import { eq, desc, ilike, isNotNull, sql, count } from 'drizzle-orm'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
-import { BottlePlaceholder } from '@/components/bottle/bottle-placeholder'
+import { BottleImage } from '@/components/bottle/bottle-image'
 import Link from 'next/link'
 import { ArrowLeft, Star, MapPin } from 'lucide-react'
 
@@ -131,11 +131,7 @@ export default async function ExploreSubPage({ params }: Props) {
                   <span className="text-xs font-bold text-accent">{index + 1}</span>
                 </div>
                 <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-surface-light flex items-center justify-center">
-                  {expression.imageUrl ? (
-                    <img src={expression.imageUrl} alt={expression.name} className="h-[85%] w-auto object-contain" />
-                  ) : (
-                    <BottlePlaceholder className="w-6 h-12" />
-                  )}
+                  <BottleImage src={expression.imageUrl} alt={expression.name} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-text-primary truncate">{expression.name}</h3>
