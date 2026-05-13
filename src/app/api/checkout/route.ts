@@ -13,6 +13,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
   }
 
-  const url = await createCheckoutSession(session.user.id, session.user.email, plan)
-  return NextResponse.json({ url })
+  try {
+    const url = await createCheckoutSession(session.user.id, session.user.email, plan)
+    return NextResponse.json({ url })
+  } catch (error) {
+    console.error('Checkout session creation failed:', error)
+    return NextResponse.json({ error: 'Checkout failed' }, { status: 500 })
+  }
 }

@@ -34,4 +34,7 @@ body {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  .pb-safe {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
 }

@@ -14,16 +14,21 @@ interface Props {
 export default async function BottleDetailPage({ params }: Props) {
   const { slug } = await params
 
-  const result = await db.select({
-    expression: expressions,
-    bottle: bottles,
-    distillery: distilleries,
-  })
-    .from(expressions)
-    .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
-    .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
-    .where(eq(expressions.slug, slug))
-    .limit(1)
+  let result: any[] = []
+  try {
+    result = await db.select({
+      expression: expressions,
+      bottle: bottles,
+      distillery: distilleries,
+    })
+      .from(expressions)
+      .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
+      .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
+      .where(eq(expressions.slug, slug))
+      .limit(1)
+  } catch {
+    return notFound()
+  }
 
   if (!result[0]) return notFound()
 
@@ -35,12 +40,12 @@ export default async function BottleDetailPage({ params }: Props) {
     .slice(0, 7)
 
   return (
-    <div className="min-h-screen bg-[#1A1612] text-[#F5F0EB] pb-10">
-      <div className="flex justify-between items-center px-5 py-3 sticky top-0 bg-[#1A1612] z-10">
+    <div className="min-h-screen bg-background text-text-primary pb-10">
+      <div className="flex justify-between items-center px-5 py-3 sticky top-0 bg-background z-10">
         <Link href="/">
-          <ArrowLeft className="w-[22px] h-[22px] text-[#A89B8C]" strokeWidth={1.5} />
+          <ArrowLeft className="w-[22px] h-[22px] text-text-muted" strokeWidth={1.5} />
         </Link>
-        <Share2 className="w-[22px] h-[22px] text-[#A89B8C]" strokeWidth={1.5} />
+        <Share2 className="w-[22px] h-[22px] text-text-muted" strokeWidth={1.5} />
       </div>
 
       <div className="flex flex-col items-center px-5 py-5 relative">
@@ -57,14 +62,14 @@ export default async function BottleDetailPage({ params }: Props) {
         <h1 className="font-display text-2xl font-bold text-center mb-1.5 relative z-10">
           {expression.name}
         </h1>
-        <p className="text-[13px] text-[#A89B8C] text-center relative z-10">
+        <p className="text-[13px] text-text-muted text-center relative z-10">
           {distillery.name} · {bottle.type === 'scotch' ? 'Scotch' : bottle.type === 'world' ? 'World' : bottle.type} {bottle.category === 'single_malt' ? 'Single Malt' : bottle.category}
         </p>
       </div>
 
       {expression.story && (
         <div className="px-5 mb-6">
-          <div className="font-story italic text-sm leading-relaxed text-[#A89B8C] p-4 pl-6 bg-[#2A2420] rounded-xl border-l-[3px] border-accent">
+          <div className="font-story italic text-sm leading-relaxed text-text-muted p-4 pl-6 bg-surface rounded-xl border-l-[3px] border-accent">
             {expression.story}
           </div>
         </div>
@@ -74,12 +79,12 @@ export default async function BottleDetailPage({ params }: Props) {
         <SectionLabel>Scores & Awards</SectionLabel>
         <div className="flex gap-2.5">
           {expression.avgCommunityScore && (
-            <div className="flex-1 bg-[#2A2420] rounded-xl p-3.5 text-center border border-[rgba(200,151,76,0.1)]">
+            <div className="flex-1 bg-surface rounded-xl p-3.5 text-center border border-[rgba(200,151,76,0.1)]">
               <div className="font-display text-[28px] font-bold text-accent mb-0.5">
                 {Math.round(expression.avgCommunityScore)}
               </div>
-              <div className="text-[10px] text-[#6B5E52] uppercase tracking-wide">Community</div>
-              <div className="text-[10px] text-[#6B5E52] mt-0.5">{expression.reviewCount} ratings</div>
+              <div className="text-[10px] text-text-secondary uppercase tracking-wide">Community</div>
+              <div className="text-[10px] text-text-secondary mt-0.5">{expression.reviewCount} ratings</div>
             </div>
           )}
         </div>
@@ -88,7 +93,7 @@ export default async function BottleDetailPage({ params }: Props) {
       {flavorEntries.length > 0 && (
         <div className="px-5 mb-6">
           <SectionLabel>Flavor Profile</SectionLabel>
-          <div className="bg-[#2A2420] rounded-xl p-5 border border-[rgba(200,151,76,0.1)] space-y-3">
+          <div className="bg-surface rounded-xl p-5 border border-[rgba(200,151,76,0.1)] space-y-3">
             {flavorEntries.map(([name, value]) => (
               <FlavorBar key={name} name={name} value={value} />
             ))}
@@ -121,11 +126,11 @@ export default async function BottleDetailPage({ params }: Props) {
       </div>
 
       <div className="px-5 flex flex-col gap-2.5">
-        <button className="w-full py-4 bg-accent text-[#1A1612] rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
+        <button className="w-full py-4 bg-accent text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
           <Plus className="w-[18px] h-[18px]" strokeWidth={2} />
           Add to Collection
         </button>
-        <button className="w-full py-4 bg-transparent text-accent border-[1.5px] border-[#8B6B3D] rounded-xl text-sm font-medium flex items-center justify-center gap-2">
+        <button className="w-full py-4 bg-transparent text-accent border-[1.5px] border-[#A67B3D] rounded-xl text-sm font-medium flex items-center justify-center gap-2">
           <Pencil className="w-[18px] h-[18px]" strokeWidth={1.5} />
           Rate This Whiskey
         </button>
@@ -136,9 +141,9 @@ export default async function BottleDetailPage({ params }: Props) {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[#2A2420] rounded-lg p-3">
-      <div className="text-[10px] text-[#6B5E52] uppercase tracking-wide mb-1">{label}</div>
-      <div className="text-[13px] font-medium text-[#F5F0EB]">{value}</div>
+    <div className="bg-surface rounded-lg p-3">
+      <div className="text-[10px] text-text-secondary uppercase tracking-wide mb-1">{label}</div>
+      <div className="text-[13px] font-medium text-text-primary">{value}</div>
     </div>
   )
 }

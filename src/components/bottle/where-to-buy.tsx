@@ -29,12 +29,12 @@ export function WhereToBuy({ links }: WhereToBuyProps) {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 bg-[#2A2420] rounded-xl border border-[rgba(200,151,76,0.1)]"
+            className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-[rgba(200,151,76,0.1)]"
             onClick={() => trackAffiliateClick(link.retailer)}
           >
-            <ShoppingBag className="w-5 h-5 text-[#A89B8C]" strokeWidth={1.5} />
+            <ShoppingBag className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
             <div className="flex-1">
-              <span className="text-sm font-medium text-[#F5F0EB]">{link.retailer}</span>
+              <span className="text-sm font-medium text-text-primary">{link.retailer}</span>
               {!link.inStock && (
                 <span className="ml-2 text-[10px] text-red-400">Out of stock</span>
               )}
@@ -43,12 +43,12 @@ export function WhereToBuy({ links }: WhereToBuyProps) {
               <span className="text-sm font-bold text-accent">
                 {link.currency === 'USD' ? '$' : link.currency}{link.price}
               </span>
-              <ExternalLink className="w-3.5 h-3.5 text-[#6B5E52]" />
+              <ExternalLink className="w-3.5 h-3.5 text-text-secondary" />
             </div>
           </a>
         ))}
       </div>
-      <p className="text-[9px] text-[#6B5E52] mt-2 text-center">
+      <p className="text-[9px] text-text-secondary mt-2 text-center">
         Prices may include affiliate links
       </p>
     </div>

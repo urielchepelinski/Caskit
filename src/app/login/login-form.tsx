@@ -133,7 +133,7 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] active:bg-[#A67B3D] transition-colors disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

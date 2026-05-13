@@ -17,7 +17,7 @@ const navItems: { id: NavItem; label: string; icon: typeof Home; href: string }[
 
 export function BottomNav({ active }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border flex justify-around items-end px-0 pt-1.5 pb-5 z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border flex justify-around items-end px-0 pt-1.5 pb-safe z-50" style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}>
       {navItems.map((item) => {
         if (item.id === 'scan') {
           return (

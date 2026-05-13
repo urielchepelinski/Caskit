@@ -123,7 +123,7 @@ export default function ScanPage() {
 
   if (state === 'manual-search') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20">
         <header className="flex items-center gap-3 px-5 pt-4 pb-3">
           <button onClick={handleRetry} className="p-1">
             <ArrowLeft className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />
@@ -137,7 +137,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <header className="flex items-center gap-3 px-5 pt-4 pb-3">
         <button onClick={handleRetry} className="p-1">
           <ArrowLeft className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />

@@ -120,7 +120,7 @@ export default async function ExplorePage() {
             <Link
               key={cat.value}
               href={`/explore/${cat.value}`}
-              className="flex flex-col items-center gap-2 p-3.5 bg-surface rounded-card border border-border hover:border-accent/50 transition-colors"
+              className="flex flex-col items-center gap-2 p-3.5 bg-surface rounded-card border border-border hover:border-accent/50 active:border-accent/50 active:scale-[0.98] transition-colors"
             >
               <span className="text-2xl">{cat.emoji}</span>
               <span className="text-xs font-medium text-text-primary">{cat.label}</span>
@@ -189,7 +189,7 @@ export default async function ExplorePage() {
             <Link
               key={region.value}
               href={`/explore/region/${region.value}`}
-              className="p-3.5 bg-surface rounded-card border border-border hover:border-accent/50 transition-colors"
+              className="p-3.5 bg-surface rounded-card border border-border hover:border-accent/50 active:border-accent/50 active:scale-[0.98] transition-colors"
             >
               <h3 className="text-sm font-bold text-text-primary">{region.label}</h3>
               <p className="text-[11px] text-text-muted mt-0.5">{region.country}</p>

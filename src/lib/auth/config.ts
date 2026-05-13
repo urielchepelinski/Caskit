@@ -88,7 +88,7 @@ export const availableProviders = {
 export const authConfig: NextAuthConfig = {
   providers,
   session: { strategy: 'jwt' },
-  secret: process.env.AUTH_SECRET || 'dev-secret-change-in-production',
+  secret: process.env.AUTH_SECRET!,
   pages: {
     signIn: '/login',
     newUser: '/onboarding',

@@ -30,23 +30,23 @@ export function AgeGate() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-sm rounded-card bg-[#1A1612] p-8 text-center shadow-elevated">
-        <h1 className="font-display text-2xl font-semibold text-[#F5F0EB]">
+      <div className="mx-4 w-full max-w-sm rounded-card bg-background p-8 text-center shadow-elevated">
+        <h1 className="font-display text-2xl font-semibold text-text-primary">
           Welcome to Caskit
         </h1>
-        <p className="mt-4 text-sm leading-relaxed text-[#A89B8C]">
+        <p className="mt-4 text-sm leading-relaxed text-text-muted">
           You must be of legal drinking age to access this app
         </p>
         <div className="mt-8 flex flex-col gap-3">
           <button
             onClick={handleConfirm}
-            className="w-full rounded-sm bg-accent py-3 text-sm font-semibold text-[#1A1612] transition-colors hover:bg-accent-dark"
+            className="w-full rounded-sm bg-accent py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
           >
             I am 18 or older
           </button>
           <button
             onClick={handleReject}
-            className="w-full rounded-sm border border-[#A89B8C]/30 py-3 text-sm font-medium text-[#A89B8C] transition-colors hover:border-[#A89B8C]/60"
+            className="w-full rounded-sm border border-border py-3 text-sm font-medium text-text-muted transition-colors hover:border-text-muted"
           >
             I am under 18
           </button>

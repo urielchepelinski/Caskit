@@ -10,10 +10,10 @@ export function Header() {
         </h1>
       </Link>
       <div className="flex gap-3">
-        <button className="w-[38px] h-[38px] rounded-full bg-surface border border-border flex items-center justify-center">
+        <button className="w-11 h-11 rounded-full bg-surface border border-border flex items-center justify-center">
           <Search className="w-[18px] h-[18px] text-text-muted" strokeWidth={1.5} />
         </button>
-        <button className="w-[38px] h-[38px] rounded-full bg-surface border border-border flex items-center justify-center">
+        <button className="w-11 h-11 rounded-full bg-surface border border-border flex items-center justify-center">
           <Bell className="w-[18px] h-[18px] text-text-muted" strokeWidth={1.5} />
         </button>
       </div>

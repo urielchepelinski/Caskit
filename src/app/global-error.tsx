@@ -18,7 +18,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
   return (
     <html lang="en">
-      <body style={{ backgroundColor: '#1A1612', margin: 0 }}>
+      <body style={{ backgroundColor: '#FFFFFF', margin: 0 }}>
         <div
           style={{
             display: 'flex',
@@ -36,13 +36,13 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               style={{
                 fontSize: '1.25rem',
                 fontWeight: 700,
-                color: '#F5F0EB',
+                color: '#1A1612',
                 marginBottom: '0.5rem',
               }}
             >
               Something went wrong
             </h1>
-            <p style={{ fontSize: '0.875rem', color: '#A89B8C' }}>
+            <p style={{ fontSize: '0.875rem', color: '#8A7E72' }}>
               A critical error occurred. Please try again.
             </p>
           </div>
@@ -54,7 +54,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
               padding: '0.75rem 1.5rem',
               fontSize: '0.875rem',
               fontWeight: 500,
-              color: '#1A1612',
+              color: '#FFFFFF',
               border: 'none',
               cursor: 'pointer',
             }}

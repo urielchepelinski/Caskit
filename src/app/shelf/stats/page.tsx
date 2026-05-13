@@ -13,23 +13,33 @@ export default async function StatsPage() {
 
   const userId = session.user.id!
 
-  const [bottleCount] = await db.select({ count: count() })
-    .from(collections).where(eq(collections.userId, userId))
+  let bottleCount = { count: 0 }
+  let reviewStats = { count: 0, avgScore: null as string | null }
+  let typeDistribution: { type: string; count: number }[] = []
 
-  const [reviewStats] = await db.select({
-    count: count(),
-    avgScore: avg(reviews.score),
-  }).from(reviews).where(eq(reviews.userId, userId))
+  try {
+    const [bc] = await db.select({ count: count() })
+      .from(collections).where(eq(collections.userId, userId))
+    bottleCount = bc
 
-  const typeDistribution = await db.select({
-    type: bottles.type,
-    count: count(),
-  })
-    .from(collections)
-    .innerJoin(expressions, eq(collections.expressionId, expressions.id))
-    .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
-    .where(eq(collections.userId, userId))
-    .groupBy(bottles.type)
+    const [rs] = await db.select({
+      count: count(),
+      avgScore: avg(reviews.score),
+    }).from(reviews).where(eq(reviews.userId, userId))
+    reviewStats = rs
+
+    typeDistribution = await db.select({
+      type: bottles.type,
+      count: count(),
+    })
+      .from(collections)
+      .innerJoin(expressions, eq(collections.expressionId, expressions.id))
+      .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
+      .where(eq(collections.userId, userId))
+      .groupBy(bottles.type)
+  } catch {
+    // All values stay as zero/empty fallbacks
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">

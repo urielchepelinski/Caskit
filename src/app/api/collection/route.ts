@@ -34,19 +34,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  const [item] = await db.insert(collections).values({
-    userId,
-    expressionId,
-    status,
-    purchasePrice,
-    purchaseLocation,
-    personalNotes,
-  }).onConflictDoUpdate({
-    target: [collections.userId, collections.expressionId],
-    set: { status, purchasePrice, purchaseLocation, personalNotes },
-  }).returning()
+  try {
+    const [item] = await db.insert(collections).values({
+      userId,
+      expressionId,
+      status,
+      purchasePrice,
+      purchaseLocation,
+      personalNotes,
+    }).onConflictDoUpdate({
+      target: [collections.userId, collections.expressionId],
+      set: { status, purchasePrice, purchaseLocation, personalNotes },
+    }).returning()
 
-  return NextResponse.json(item, { status: 201 })
+    return NextResponse.json(item, { status: 201 })
+  } catch (error) {
+    console.error('Failed to add to collection:', error)
+    return NextResponse.json({ error: 'Failed to add to collection' }, { status: 500 })
+  }
 }
 
 export async function DELETE(request: NextRequest) {
@@ -62,9 +67,14 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'expressionId is required' }, { status: 400 })
   }
 
-  await db.delete(collections).where(
-    and(eq(collections.userId, userId), eq(collections.expressionId, Number(expressionId)))
-  )
+  try {
+    await db.delete(collections).where(
+      and(eq(collections.userId, userId), eq(collections.expressionId, Number(expressionId)))
+    )
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Failed to remove from collection:', error)
+    return NextResponse.json({ error: 'Failed to remove from collection' }, { status: 500 })
+  }
 }

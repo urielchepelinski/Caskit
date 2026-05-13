@@ -9,8 +9,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'expressionId is required' }, { status: 400 })
   }
 
-  const reviews = await getExpressionReviews(Number(expressionId))
-  return NextResponse.json(reviews)
+  try {
+    const reviews = await getExpressionReviews(Number(expressionId))
+    return NextResponse.json(reviews)
+  } catch (error) {
+    console.error('Failed to load reviews:', error)
+    return NextResponse.json({ error: 'Failed to load reviews' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {

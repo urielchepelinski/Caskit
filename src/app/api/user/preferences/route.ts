@@ -10,11 +10,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const preferences = await request.json()
+  try {
+    const preferences = await request.json()
 
-  await db.update(users)
-    .set({ preferences, updatedAt: new Date() })
-    .where(eq(users.id, session.user.id))
+    await db.update(users)
+      .set({ preferences, updatedAt: new Date() })
+      .where(eq(users.id, session.user.id))
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Failed to update preferences:', error)
+    return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 })
+  }
 }

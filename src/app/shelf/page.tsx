@@ -12,21 +12,26 @@ export default async function ShelfPage() {
 
   const userId = session.user.id!
 
-  const userCollection = await db.select({
-    collection: collections,
-    expression: expressions,
-    bottle: bottles,
-    distillery: distilleries,
-  })
-    .from(collections)
-    .innerJoin(expressions, eq(collections.expressionId, expressions.id))
-    .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
-    .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
-    .where(eq(collections.userId, userId))
+  let userCollection: Awaited<ReturnType<typeof db.select>>[] = []
+  try {
+    userCollection = await db.select({
+      collection: collections,
+      expression: expressions,
+      bottle: bottles,
+      distillery: distilleries,
+    })
+      .from(collections)
+      .innerJoin(expressions, eq(collections.expressionId, expressions.id))
+      .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
+      .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
+      .where(eq(collections.userId, userId))
+  } catch {
+    // userCollection stays as empty array fallback
+  }
 
-  const owned = userCollection.filter(c => c.collection.status === 'owned')
-  const wishlist = userCollection.filter(c => c.collection.status === 'wishlist')
-  const tasted = userCollection.filter(c => c.collection.status === 'tasted')
+  const owned = userCollection.filter((c: any) => c.collection.status === 'owned')
+  const wishlist = userCollection.filter((c: any) => c.collection.status === 'wishlist')
+  const tasted = userCollection.filter((c: any) => c.collection.status === 'tasted')
 
   return (
     <div className="min-h-screen bg-background pb-20">
