@@ -149,6 +149,24 @@ export const awardScores = pgTable('award_scores', {
   expressionIdx: index('awards_expression_idx').on(table.expressionId),
 }))
 
+export const prices = pgTable('prices', {
+  id: serial('id').primaryKey(),
+  expressionId: integer('expression_id').references(() => expressions.id).notNull(),
+  countryCode: varchar('country_code', { length: 2 }).notNull(), // ISO 3166-1 alpha-2
+  currency: varchar('currency', { length: 3 }).notNull(), // ISO 4217 (USD, GBP, EUR, etc.)
+  minPrice: real('min_price'),
+  maxPrice: real('max_price'),
+  avgPrice: real('avg_price'),
+  retailer: text('retailer'), // e.g. 'Wine-Searcher', 'Master of Malt', 'aggregate'
+  retailerUrl: text('retailer_url'),
+  lastUpdated: timestamp('last_updated').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  expressionIdx: index('prices_expression_idx').on(table.expressionId),
+  countryIdx: index('prices_country_idx').on(table.countryCode),
+  expressionCountryIdx: uniqueIndex('prices_expression_country_retailer_idx').on(table.expressionId, table.countryCode, table.retailer),
+}))
+
 export const scans = pgTable('scans', {
   id: serial('id').primaryKey(),
   userId: text('user_id').references(() => users.id),
@@ -179,7 +197,12 @@ export const expressionsRelations = relations(expressions, ({ one, many }) => ({
   bottle: one(bottles, { fields: [expressions.bottleId], references: [bottles.id] }),
   reviews: many(reviews),
   awards: many(awardScores),
+  prices: many(prices),
   hashes: many(perceptualHashes),
+}))
+
+export const pricesRelations = relations(prices, ({ one }) => ({
+  expression: one(expressions, { fields: [prices.expressionId], references: [expressions.id] }),
 }))
 
 export const usersRelations = relations(users, ({ many }) => ({
