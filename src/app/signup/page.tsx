@@ -36,21 +36,26 @@ export default function SignupPage() {
       }
 
       // Auto sign in after successful signup
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
+      try {
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+        })
 
-      if (result?.error) {
-        setError('Account created but sign-in failed. Please log in.')
-        setLoading(false)
-        return
+        if (result?.error) {
+          // Account created but auto-login failed — send to login page
+          router.push('/login')
+          return
+        }
+
+        router.push('/')
+      } catch {
+        // Account created but sign-in errored — send to login page
+        router.push('/login')
       }
-
-      router.push('/')
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setLoading(false)
     }
   }

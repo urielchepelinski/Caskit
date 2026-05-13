@@ -68,12 +68,17 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
     const canvas = canvasRef.current
     if (!video || !canvas) return
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    // Ensure video has actual dimensions (stream is ready)
+    const w = video.videoWidth || video.clientWidth || 640
+    const h = video.videoHeight || video.clientHeight || 480
+    if (w === 0 || h === 0) return
+
+    canvas.width = w
+    canvas.height = h
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    ctx.drawImage(video, 0, 0)
+    ctx.drawImage(video, 0, 0, w, h)
     canvas.toBlob((blob) => {
       if (blob) {
         stopCamera()
