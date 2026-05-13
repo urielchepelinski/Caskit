@@ -7,7 +7,7 @@ import { ScanLoading } from '@/components/scan/scan-loading'
 import { ScanResult } from '@/components/scan/scan-result'
 import { ManualSearch } from '@/components/scan/manual-search'
 import { BottomNav } from '@/components/layout/bottom-nav'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, HelpCircle, Search, RotateCcw } from 'lucide-react'
 
 type ScanState = 'idle' | 'capturing' | 'processing' | 'result' | 'manual-search' | 'error'
 
@@ -163,22 +163,28 @@ export default function ScanPage() {
       )}
 
       {state === 'error' && (
-        <div className="p-8 text-center">
-          <p className="text-text-secondary mb-4">
-            {errorMessage || 'Something went wrong. Please try again.'}
+        <div className="p-6 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface flex items-center justify-center">
+            <HelpCircle className="w-8 h-8 text-text-muted" />
+          </div>
+          <h2 className="text-lg font-bold mb-2">Couldn&apos;t identify this bottle</h2>
+          <p className="text-sm text-text-secondary mb-6">
+            {errorMessage || 'Try searching for it manually or scan again with better lighting.'}
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={handleRetry}
-              className="px-6 py-3 bg-accent text-white rounded-card font-medium"
+              onClick={handleManualSearch}
+              className="w-full py-3 bg-accent text-white rounded-card text-sm font-medium flex items-center justify-center gap-2"
             >
-              Scan Again
+              <Search className="w-4 h-4" />
+              Search manually
             </button>
             <button
-              onClick={handleManualSearch}
-              className="px-6 py-3 bg-surface border border-border text-text-secondary rounded-card font-medium"
+              onClick={handleRetry}
+              className="w-full py-3 bg-surface rounded-card border border-border text-sm font-medium text-text-secondary flex items-center justify-center gap-2"
             >
-              Search Manually
+              <RotateCcw className="w-4 h-4" />
+              Scan again
             </button>
           </div>
         </div>

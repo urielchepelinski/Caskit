@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'media.getmood.io' },
       { protocol: 'https', hostname: '*.golanispirit.com' },
       { protocol: 'https', hostname: '*.r2.cloudflarestorage.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
   experimental: {

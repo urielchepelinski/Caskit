@@ -28,22 +28,22 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
   const handleDevLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     await signIn('credentials', {
-      email: devEmail || 'dev@caskit.app',
+      email: devEmail || 'guest@caskit.app',
       callbackUrl: '/',
     })
   }
 
   if (!hasAny) {
     return (
-      <div className="min-h-screen bg-[#1A1612] flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm text-center">
-          <h1 className="font-display text-3xl font-bold text-[#F5F0EB] mb-2">
+          <h1 className="font-display text-3xl font-bold text-[#1A1612] mb-2">
             Cas<span className="text-[#C8974C]">kit</span>
           </h1>
-          <div className="mt-8 p-6 bg-[#2A2420] rounded-xl border border-[#3A3430]">
+          <div className="mt-8 p-6 bg-[#F8F5F0] rounded-xl border border-[#E8E2DA]">
             <Lock className="w-8 h-8 text-[#C8974C] mx-auto mb-3" />
-            <p className="text-sm text-[#F5F0EB] font-medium mb-2">Authentication Coming Soon</p>
-            <p className="text-xs text-[#A09080]">
+            <p className="text-sm text-[#1A1612] font-medium mb-2">Authentication Coming Soon</p>
+            <p className="text-xs text-[#8A7E72]">
               Sign-in is not configured yet. Set up OAuth providers or enable dev mode to get started.
             </p>
           </div>
@@ -53,12 +53,12 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#1A1612] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-3xl font-bold text-center text-[#F5F0EB] mb-2">
+        <h1 className="font-display text-3xl font-bold text-center text-[#1A1612] mb-2">
           Cas<span className="text-[#C8974C]">kit</span>
         </h1>
-        <p className="text-sm text-[#A09080] text-center mb-8">
+        <p className="text-sm text-[#8A7E72] text-center mb-8">
           Sign in to save your collection and join the community.
         </p>
 
@@ -66,7 +66,7 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
           {available.google && (
             <button
               onClick={() => signIn('google', { callbackUrl: '/' })}
-              className="w-full py-3 px-4 bg-white border border-[#3A3430] rounded-xl text-sm font-medium text-gray-800 flex items-center justify-center gap-3 shadow-sm"
+              className="w-full py-3 px-4 bg-white border border-[#E8E2DA] rounded-xl text-sm font-medium text-gray-800 flex items-center justify-center gap-3 shadow-sm"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -94,10 +94,10 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
         {available.email && (available.google || available.apple) && (
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#3A3430]" />
+              <div className="w-full border-t border-[#E8E2DA]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-[#1A1612] text-xs text-[#706050]">or</span>
+              <span className="px-3 bg-[#FFFFFF] text-xs text-[#8A7E72]">or</span>
             </div>
           </div>
         )}
@@ -105,19 +105,19 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
         {available.email && !emailSent && (
           <form onSubmit={handleEmailLogin} className="space-y-3">
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#706050]" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A7E72]" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-[#2A2420] border border-[#3A3430] rounded-xl text-sm text-[#F5F0EB] placeholder-[#706050] focus:outline-none focus:border-[#C8974C]"
+                className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
               />
             </div>
             <button
               type="submit"
-              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#B8873C] transition-colors"
+              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] transition-colors"
             >
               Send Magic Link
             </button>
@@ -125,9 +125,9 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
         )}
 
         {available.email && emailSent && (
-          <div className="text-center p-4 bg-[#2A2420] rounded-xl border border-[#3A3430]">
-            <p className="text-sm font-medium text-[#F5F0EB] mb-1">Check your email</p>
-            <p className="text-xs text-[#A09080]">
+          <div className="text-center p-4 bg-[#F8F5F0] rounded-xl border border-[#E8E2DA]">
+            <p className="text-sm font-medium text-[#1A1612] mb-1">Check your email</p>
+            <p className="text-xs text-[#8A7E72]">
               We sent a sign-in link to {email}
             </p>
           </div>
@@ -135,36 +135,38 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
 
         {available.dev && (
           <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-dashed border-[#3A3430]" />
+            {(available.google || available.apple || available.email) && (
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#E8E2DA]" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-3 bg-[#FFFFFF] text-xs text-[#8A7E72]">or sign in with email</span>
+                </div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="px-3 bg-[#1A1612] text-xs text-[#C8974C]">dev mode</span>
-              </div>
-            </div>
+            )}
             <form onSubmit={handleDevLogin} className="space-y-3">
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#706050]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A7E72]" />
                 <input
                   type="email"
                   value={devEmail}
                   onChange={(e) => setDevEmail(e.target.value)}
-                  placeholder="dev@caskit.app"
-                  className="w-full pl-10 pr-4 py-3 bg-[#2A2420] border border-dashed border-[#C8974C]/30 rounded-xl text-sm text-[#F5F0EB] placeholder-[#706050] focus:outline-none focus:border-[#C8974C]"
+                  placeholder="you@example.com"
+                  className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full py-3 bg-[#2A2420] border border-[#C8974C]/50 text-[#C8974C] rounded-xl text-sm font-semibold hover:bg-[#C8974C]/10 transition-colors"
+                className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] transition-colors"
               >
-                Dev Sign In (any email)
+                Quick Sign In
               </button>
             </form>
           </>
         )}
 
-        <p className="text-xs text-[#706050] text-center mt-6">
+        <p className="text-xs text-[#8A7E72] text-center mt-6">
           By signing in, you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>

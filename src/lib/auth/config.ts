@@ -35,26 +35,27 @@ function buildProviders(): Provider[] {
     )
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    providers.push(
-      Credentials({
-        name: 'Dev Login',
-        credentials: {
-          email: { label: 'Email', type: 'email', placeholder: 'dev@caskit.app' },
-        },
-        async authorize(credentials) {
-          const email = credentials?.email as string
-          if (!email) return null
-          return {
-            id: 'dev-user-1',
-            name: email.split('@')[0],
-            email,
-            image: null,
-          }
-        },
-      })
-    )
-  }
+  // Guest login — always available (MVP/demo app)
+  providers.push(
+    Credentials({
+      name: 'Guest Login',
+      credentials: {
+        email: { label: 'Email', type: 'email', placeholder: 'you@example.com' },
+      },
+      async authorize(credentials) {
+        const email = credentials?.email as string
+        if (!email) return null
+        // Derive a stable ID from the email so the same email always gets the same user
+        const id = `guest-${email.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`
+        return {
+          id,
+          name: email.split('@')[0],
+          email,
+          image: null,
+        }
+      },
+    })
+  )
 
   return providers
 }
@@ -65,7 +66,7 @@ export const availableProviders = {
   google: !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET),
   apple: !!(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET),
   email: !!process.env.RESEND_API_KEY,
-  dev: process.env.NODE_ENV === 'development',
+  dev: true, // Guest/credentials login always available
 }
 
 export const authConfig: NextAuthConfig = {

@@ -5,20 +5,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#1A1612',
-        surface: '#2A2420',
-        'surface-light': '#3A3430',
+        background: '#FFFFFF',
+        surface: '#F8F5F0',
+        'surface-light': '#F0EBE3',
         accent: {
           DEFAULT: '#C8974C',
-          dark: '#8B6B3D',
+          dark: '#A67B3D',
           light: '#D4A85E',
         },
         text: {
-          primary: '#F5F0EB',
-          secondary: '#C4B8AA',
-          muted: '#A89B8C',
+          primary: '#1A1612',
+          secondary: '#5C5248',
+          muted: '#8A7E72',
         },
-        border: '#3D3530',
+        border: '#E8E2DA',
       },
       fontFamily: {
         display: ['Playfair Display', 'serif'],
@@ -30,8 +30,8 @@ const config: Config = {
         sm: '10px',
       },
       boxShadow: {
-        card: '0 2px 12px rgba(0, 0, 0, 0.2)',
-        elevated: '0 8px 24px rgba(0, 0, 0, 0.3)',
+        card: '0 2px 12px rgba(0, 0, 0, 0.06)',
+        elevated: '0 8px 24px rgba(0, 0, 0, 0.1)',
       },
     },
   },
