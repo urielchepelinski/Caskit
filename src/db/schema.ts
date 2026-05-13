@@ -89,6 +89,7 @@ export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name'),
+  passwordHash: text('password_hash'),
   avatarUrl: text('avatar_url'),
   subscriptionTier: text('subscription_tier').default('free').notNull(), // free, premium
   stripeCustomerId: text('stripe_customer_id'),

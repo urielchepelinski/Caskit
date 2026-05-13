@@ -35,23 +35,39 @@ function buildProviders(): Provider[] {
     )
   }
 
-  // Guest login — always available (MVP/demo app)
+  // Email + password login — validates against DB
   providers.push(
     Credentials({
-      name: 'Guest Login',
+      name: 'Credentials',
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'you@example.com' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         const email = credentials?.email as string
-        if (!email) return null
-        // Derive a stable ID from the email so the same email always gets the same user
-        const id = `guest-${email.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`
-        return {
-          id,
-          name: email.split('@')[0],
-          email,
-          image: null,
+        const password = credentials?.password as string
+        if (!email || !password) return null
+
+        try {
+          const { db } = await import('@/db')
+          const { users } = await import('@/db/schema')
+          const { eq } = await import('drizzle-orm')
+          const { verifyPassword } = await import('@/lib/auth/password')
+
+          const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
+          if (!user || !user.passwordHash) return null
+
+          const valid = await verifyPassword(password, user.passwordHash)
+          if (!valid) return null
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.avatarUrl,
+          }
+        } catch {
+          return null
         }
       },
     })
@@ -66,7 +82,7 @@ export const availableProviders = {
   google: !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET),
   apple: !!(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET),
   email: !!process.env.RESEND_API_KEY,
-  dev: true, // Guest/credentials login always available
+  credentials: true, // Email + password login always available
 }
 
 export const authConfig: NextAuthConfig = {

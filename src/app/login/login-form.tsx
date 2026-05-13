@@ -2,6 +2,8 @@
 
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Mail, Lock } from 'lucide-react'
 
 interface LoginFormProps {
@@ -9,42 +11,50 @@ interface LoginFormProps {
     google: boolean
     apple: boolean
     email: boolean
-    dev: boolean
+    credentials: boolean
   }
   hasAny: boolean
 }
 
 export function LoginForm({ available, hasAny }: LoginFormProps) {
+  const router = useRouter()
   const [email, setEmail] = useState('')
-  const [emailSent, setEmailSent] = useState(false)
-  const [devEmail, setDevEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    await signIn('resend', { email, redirect: false })
-    setEmailSent(true)
-  }
+    setError('')
+    setLoading(true)
 
-  const handleDevLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    await signIn('credentials', {
-      email: devEmail || 'guest@caskit.app',
-      callbackUrl: '/',
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
     })
+
+    if (result?.error) {
+      setError('Invalid email or password')
+      setLoading(false)
+      return
+    }
+
+    router.push('/')
   }
 
   if (!hasAny) {
     return (
-      <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center px-6">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm text-center">
           <h1 className="font-display text-3xl font-bold text-[#1A1612] mb-2">
             Cas<span className="text-[#C8974C]">kit</span>
           </h1>
           <div className="mt-8 p-6 bg-[#F8F5F0] rounded-xl border border-[#E8E2DA]">
             <Lock className="w-8 h-8 text-[#C8974C] mx-auto mb-3" />
-            <p className="text-sm text-[#1A1612] font-medium mb-2">Authentication Coming Soon</p>
+            <p className="text-sm text-[#1A1612] font-medium mb-2">Authentication Not Available</p>
             <p className="text-xs text-[#8A7E72]">
-              Sign-in is not configured yet. Set up OAuth providers or enable dev mode to get started.
+              Please try again later.
             </p>
           </div>
         </div>
@@ -53,17 +63,17 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <h1 className="font-display text-3xl font-bold text-center text-[#1A1612] mb-2">
           Cas<span className="text-[#C8974C]">kit</span>
         </h1>
         <p className="text-sm text-[#8A7E72] text-center mb-8">
-          Sign in to save your collection and join the community.
+          Sign in to your account.
         </p>
 
-        <div className="space-y-3 mb-6">
-          {available.google && (
+        {available.google && (
+          <div className="mb-4">
             <button
               onClick={() => signIn('google', { callbackUrl: '/' })}
               className="w-full py-3 px-4 bg-white border border-[#E8E2DA] rounded-xl text-sm font-medium text-gray-800 flex items-center justify-center gap-3 shadow-sm"
@@ -76,98 +86,65 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
               </svg>
               Continue with Google
             </button>
-          )}
+          </div>
+        )}
 
-          {available.apple && (
-            <button
-              onClick={() => signIn('apple', { callbackUrl: '/' })}
-              className="w-full py-3 px-4 bg-black text-white rounded-xl text-sm font-medium flex items-center justify-center gap-3"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-              </svg>
-              Continue with Apple
-            </button>
-          )}
-        </div>
-
-        {available.email && (available.google || available.apple) && (
+        {available.google && available.credentials && (
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#E8E2DA]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-[#FFFFFF] text-xs text-[#8A7E72]">or</span>
+              <span className="px-3 bg-white text-xs text-[#8A7E72]">or</span>
             </div>
           </div>
         )}
 
-        {available.email && !emailSent && (
-          <form onSubmit={handleEmailLogin} className="space-y-3">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {available.credentials && (
+          <form onSubmit={handleLogin} className="space-y-3">
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A7E72]" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="you@example.com"
+                required
+                className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
+              />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A7E72]" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
                 required
                 className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
               />
             </div>
             <button
               type="submit"
-              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] transition-colors"
+              disabled={loading}
+              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] transition-colors disabled:opacity-50"
             >
-              Send Magic Link
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         )}
 
-        {available.email && emailSent && (
-          <div className="text-center p-4 bg-[#F8F5F0] rounded-xl border border-[#E8E2DA]">
-            <p className="text-sm font-medium text-[#1A1612] mb-1">Check your email</p>
-            <p className="text-xs text-[#8A7E72]">
-              We sent a sign-in link to {email}
-            </p>
-          </div>
-        )}
-
-        {available.dev && (
-          <>
-            {(available.google || available.apple || available.email) && (
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-[#E8E2DA]" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="px-3 bg-[#FFFFFF] text-xs text-[#8A7E72]">or sign in with email</span>
-                </div>
-              </div>
-            )}
-            <form onSubmit={handleDevLogin} className="space-y-3">
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A7E72]" />
-                <input
-                  type="email"
-                  value={devEmail}
-                  onChange={(e) => setDevEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] transition-colors"
-              >
-                Quick Sign In
-              </button>
-            </form>
-          </>
-        )}
-
-        <p className="text-xs text-[#8A7E72] text-center mt-6">
-          By signing in, you agree to our Terms of Service and Privacy Policy.
+        <p className="text-sm text-[#8A7E72] text-center mt-6">
+          Don&apos;t have an account?{' '}
+          <Link href="/signup" className="text-[#C8974C] font-medium">
+            Create one
+          </Link>
         </p>
       </div>
     </div>
