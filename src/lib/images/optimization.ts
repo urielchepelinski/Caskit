@@ -58,13 +58,16 @@ export function getOptimizedImageProps(
 }
 
 export async function generateBlurDataUrl(buffer: Buffer): Promise<string> {
-  const sharp = (await import('sharp')).default
-  const resized = await sharp(buffer)
-    .resize(10, undefined, { withoutEnlargement: true })
-    .jpeg({ quality: 40 })
-    .toBuffer()
-
-  return `data:image/jpeg;base64,${resized.toString('base64')}`
+  try {
+    const sharp = (await import('sharp')).default
+    const resized = await sharp(buffer)
+      .resize(10, undefined, { withoutEnlargement: true })
+      .jpeg({ quality: 40 })
+      .toBuffer()
+    return `data:image/jpeg;base64,${resized.toString('base64')}`
+  } catch {
+    return ''
+  }
 }
 
 interface BreakpointSizes {
