@@ -17,13 +17,13 @@ const navItems: { id: NavItem; label: string; icon: typeof Home; href: string }[
 
 export function BottomNav({ active }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border flex justify-around items-end px-0 pt-1.5 pb-5 z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-background border-t border-border flex justify-around items-end px-0 pt-1.5 pb-5 z-50">
       {navItems.map((item) => {
         if (item.id === 'scan') {
           return (
             <Link key={item.id} href={item.href} className="flex flex-col items-center gap-0.5">
-              <div className="w-12 h-12 bg-text-primary rounded-full flex items-center justify-center -mt-3.5 shadow-elevated">
-                <Camera className="w-[22px] h-[22px] text-white" strokeWidth={1.5} />
+              <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center -mt-3.5 shadow-elevated">
+                <Camera className="w-[22px] h-[22px] text-background" strokeWidth={1.5} />
               </div>
               <span className="text-[10px] font-semibold text-text-primary">Scan</span>
             </Link>

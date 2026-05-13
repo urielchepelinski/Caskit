@@ -1,3 +1,3 @@
 export { recognizeBottle } from './recognize'
-export { computePerceptualHash, compareHashes } from './phash'
+export { compareHashes, HASH_MATCH_THRESHOLD } from './phash'
 export type { RecognitionResult, PipelineStage } from './types'

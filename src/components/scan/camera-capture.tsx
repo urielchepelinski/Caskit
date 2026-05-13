@@ -1,19 +1,21 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
-import { Camera, X, RotateCcw } from 'lucide-react'
+import { useRef, useState, useCallback, useEffect } from 'react'
+import { Camera, X, RotateCcw, Search } from 'lucide-react'
 
 interface CameraCaptureProps {
   onCapture: (imageData: Blob) => void
   onClose: () => void
+  onManualSearch?: () => void
 }
 
-export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
+export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const mountedRef = useRef(true)
 
   const startCamera = useCallback(async () => {
     try {
@@ -24,14 +26,20 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
           height: { ideal: 720 },
         },
       })
+      if (!mountedRef.current) {
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         setIsStreaming(true)
         setError(null)
       }
-    } catch (err) {
-      setError('Camera access denied. Please allow camera permissions.')
+    } catch {
+      if (mountedRef.current) {
+        setError('Camera access denied. Please allow camera permissions or search manually below.')
+      }
     }
   }, [])
 
@@ -42,6 +50,18 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
       setIsStreaming(false)
     }
   }, [])
+
+  useEffect(() => {
+    mountedRef.current = true
+    startCamera()
+    return () => {
+      mountedRef.current = false
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
+    }
+  }, [startCamera])
 
   const captureFrame = useCallback(() => {
     const video = videoRef.current
@@ -79,27 +99,38 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
 
       <div className="flex-1 relative flex items-center justify-center">
         {!isStreaming && !error && (
-          <button
-            onClick={startCamera}
-            className="flex flex-col items-center gap-4 text-white"
-          >
-            <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/30">
+          <div className="flex flex-col items-center gap-4 text-white">
+            <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/30 animate-pulse">
               <Camera className="w-8 h-8" />
             </div>
-            <span className="text-sm">Tap to open camera</span>
-          </button>
+            <span className="text-sm">Starting camera...</span>
+          </div>
         )}
 
         {error && (
           <div className="text-center px-8">
-            <p className="text-white/70 text-sm mb-4">{error}</p>
-            <button
-              onClick={startCamera}
-              className="flex items-center gap-2 text-accent mx-auto"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Try again
-            </button>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+              <Camera className="w-8 h-8 text-white/50" />
+            </div>
+            <p className="text-white/70 text-sm mb-6">{error}</p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={startCamera}
+                className="flex items-center gap-2 text-accent mx-auto px-4 py-2 border border-accent/30 rounded-lg"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Try again
+              </button>
+              {onManualSearch && (
+                <button
+                  onClick={onManualSearch}
+                  className="flex items-center gap-2 text-white/80 mx-auto px-4 py-2"
+                >
+                  <Search className="w-4 h-4" />
+                  Search manually
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -113,22 +144,40 @@ export function CameraCapture({ onCapture, onClose }: CameraCaptureProps) {
 
         {isStreaming && (
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-80 border-2 border-white/40 rounded-2xl" />
-            <div className="absolute bottom-8 left-0 right-0 text-center">
-              <p className="text-white/80 text-sm">Point at the label</p>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-80 border-2 border-accent/60 rounded-2xl">
+              <div className="absolute -top-px -left-px w-6 h-6 border-t-2 border-l-2 border-accent rounded-tl-2xl" />
+              <div className="absolute -top-px -right-px w-6 h-6 border-t-2 border-r-2 border-accent rounded-tr-2xl" />
+              <div className="absolute -bottom-px -left-px w-6 h-6 border-b-2 border-l-2 border-accent rounded-bl-2xl" />
+              <div className="absolute -bottom-px -right-px w-6 h-6 border-b-2 border-r-2 border-accent rounded-br-2xl" />
+            </div>
+            <div className="absolute bottom-24 left-0 right-0 text-center">
+              <p className="text-white/80 text-sm">Point at the bottle label</p>
             </div>
           </div>
         )}
       </div>
 
       {isStreaming && (
-        <div className="p-6 flex justify-center">
+        <div className="p-6 pb-8 flex flex-col items-center gap-4">
           <button
             onClick={captureFrame}
-            className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
+            className="w-18 h-18 rounded-full flex items-center justify-center shadow-lg"
+            style={{ width: '72px', height: '72px', background: '#C8974C' }}
           >
-            <div className="w-14 h-14 rounded-full border-4 border-text-primary" />
+            <div
+              className="rounded-full border-4 border-white/90"
+              style={{ width: '60px', height: '60px' }}
+            />
           </button>
+          {onManualSearch && (
+            <button
+              onClick={() => { stopCamera(); onManualSearch() }}
+              className="flex items-center gap-2 text-white/60 text-sm"
+            >
+              <Search className="w-3.5 h-3.5" />
+              Can&apos;t scan? Search manually
+            </button>
+          )}
         </div>
       )}
 

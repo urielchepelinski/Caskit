@@ -1,39 +1,38 @@
 import { db } from '@/db'
-import { perceptualHashes, expressions } from '@/db/schema'
-import { eq } from 'drizzle-orm'
-import { computePerceptualHash, compareHashes, HASH_MATCH_THRESHOLD } from './phash'
+import { perceptualHashes, expressions, bottles, distilleries } from '@/db/schema'
+import { eq, ilike, or } from 'drizzle-orm'
+import { compareHashes, HASH_MATCH_THRESHOLD } from './phash'
 import type { RecognitionResult } from './types'
 
 export async function recognizeBottle(imageBuffer: Buffer): Promise<RecognitionResult> {
-  // Stage 0: Perceptual hash cache lookup
+  // Stage 0: Perceptual hash cache lookup (safe — catches errors)
   const cacheResult = await tryHashCache(imageBuffer)
   if (cacheResult) return cacheResult
 
-  // Stage 1: Lightweight classifier (future implementation)
-  // const classifierResult = await tryClassifier(imageBuffer)
-  // if (classifierResult) return classifierResult
-
-  // Stage 2: OCR → fuzzy search (future implementation)
-  // const ocrResult = await tryOcr(imageBuffer)
-  // if (ocrResult) return ocrResult
-
-  // Stage 3: Claude Vision API (last resort)
+  // Stage 1: Claude Vision API (requires ANTHROPIC_API_KEY)
   const visionResult = await tryVisionApi(imageBuffer)
   if (visionResult) return visionResult
 
-  // No match found
+  // No match found — caller should offer manual search
   return { expressionId: null, confidence: 0, method: 'manual' }
 }
 
 async function tryHashCache(imageBuffer: Buffer): Promise<RecognitionResult | null> {
   try {
-    const hash = computePerceptualHash(imageBuffer)
+    // Dynamic import of image-hash to avoid crash if not installed
+    const { imageHash } = await import('image-hash')
+    const hash: string = await new Promise((resolve, reject) => {
+      imageHash({ data: imageBuffer }, 16, true, (err: Error | null, data: string) => {
+        if (err) reject(err)
+        else resolve(data)
+      })
+    })
+
     const allHashes = await db.select().from(perceptualHashes)
 
     for (const stored of allHashes) {
       const distance = compareHashes(hash, stored.hashValue)
       if (distance <= HASH_MATCH_THRESHOLD) {
-        // Update hit count
         await db.update(perceptualHashes)
           .set({ hitCount: (stored.hitCount ?? 0) + 1 })
           .where(eq(perceptualHashes.id, stored.id))
@@ -46,7 +45,7 @@ async function tryHashCache(imageBuffer: Buffer): Promise<RecognitionResult | nu
       }
     }
   } catch {
-    // Hash computation failed, fall through to next stage
+    // Hash computation not available or failed — skip silently
   }
   return null
 }
@@ -83,21 +82,50 @@ async function tryVisionApi(imageBuffer: Buffer): Promise<RecognitionResult | nu
       }),
     })
 
+    if (!response.ok) return null
+
     const data = await response.json()
     const text = data.content?.[0]?.text
     if (!text) return null
 
-    const parsed = JSON.parse(text)
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return null
+    const parsed = JSON.parse(jsonMatch[0])
 
-    // Try to match to existing expression in DB
-    const matches = await db.select().from(expressions)
-      .where(eq(expressions.slug, slugify(`${parsed.distillery}-${parsed.bottle_name}-${parsed.expression}`)))
+    // Try to match to existing expression in DB by slug or name
+    const candidateSlug = slugify(`${parsed.distillery}-${parsed.bottle_name}-${parsed.expression}`)
+    const searchName = `%${parsed.bottle_name || parsed.expression}%`
+
+    const matches = await db.select({
+      expression: expressions,
+      bottle: bottles,
+      distillery: distilleries,
+    })
+      .from(expressions)
+      .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
+      .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
+      .where(
+        or(
+          eq(expressions.slug, candidateSlug),
+          ilike(expressions.name, searchName),
+        )
+      )
+      .limit(5)
+
+    const suggestions = matches.map(m => ({
+      expressionId: m.expression.id,
+      name: m.expression.name,
+      confidence: m.expression.slug === candidateSlug ? (parsed.confidence ?? 0.8) : 0.5,
+    }))
+
+    const bestMatch = suggestions.find(s => s.confidence >= 0.7)
 
     return {
-      expressionId: matches[0]?.id ?? null,
-      confidence: parsed.confidence ?? 0.7,
+      expressionId: bestMatch?.expressionId ?? null,
+      confidence: bestMatch?.confidence ?? parsed.confidence ?? 0.5,
       method: 'vision_api',
       rawData: parsed,
+      suggestions: suggestions.length > 0 ? suggestions : undefined,
     }
   } catch {
     return null

@@ -1,42 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recognizeBottle } from '@/lib/recognition'
-import { uploadImage } from '@/lib/images'
 import { db } from '@/db'
-import { scans } from '@/db/schema'
+import { expressions, bottles, distilleries, scans } from '@/db/schema'
+import { ilike, eq, or } from 'drizzle-orm'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const file = formData.get('image') as File | null
+    const contentType = request.headers.get('content-type') || ''
 
-    if (!file) {
-      return NextResponse.json({ error: 'No image provided' }, { status: 400 })
+    if (contentType.includes('application/json')) {
+      return handleTextSearch(request)
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, or WebP.' }, { status: 400 })
-    }
+    return handleImageScan(request)
+  } catch (error) {
+    console.error('Scan error:', error)
+    return NextResponse.json({ error: 'Recognition failed' }, { status: 500 })
+  }
+}
 
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File too large. Maximum 10MB.' }, { status: 400 })
-    }
+async function handleImageScan(request: NextRequest) {
+  const formData = await request.formData()
+  const file = formData.get('image') as File | null
 
-    const buffer = Buffer.from(await file.arrayBuffer())
+  if (!file) {
+    return NextResponse.json({ error: 'No image provided' }, { status: 400 })
+  }
 
-    // Upload the image
-    const upload = await uploadImage(buffer, file.name, file.type)
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, or WebP.' }, { status: 400 })
+  }
 
-    // Run recognition pipeline
-    const result = await recognizeBottle(buffer)
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: 'File too large. Maximum 10MB.' }, { status: 400 })
+  }
 
-    // Log the scan
+  const buffer = Buffer.from(await file.arrayBuffer())
+
+  const result = await recognizeBottle(buffer)
+
+  try {
     const [scan] = await db.insert(scans).values({
       expressionId: result.expressionId,
-      imageUrl: upload.url,
-      thumbnailUrl: upload.thumbnailUrl,
       recognitionMethod: result.method,
       confidence: result.confidence,
       rawResult: result.rawData ?? null,
@@ -49,8 +57,55 @@ export async function POST(request: NextRequest) {
       method: result.method,
       suggestions: result.suggestions,
     })
-  } catch (error) {
-    console.error('Scan error:', error)
-    return NextResponse.json({ error: 'Recognition failed' }, { status: 500 })
+  } catch {
+    return NextResponse.json({
+      expressionId: result.expressionId,
+      confidence: result.confidence,
+      method: result.method,
+      suggestions: result.suggestions,
+    })
   }
+}
+
+async function handleTextSearch(request: NextRequest) {
+  const body = await request.json()
+  const { query } = body as { query?: string }
+
+  if (!query || query.trim().length < 2) {
+    return NextResponse.json({ error: 'Search query too short' }, { status: 400 })
+  }
+
+  const searchTerm = `%${query.trim()}%`
+
+  const results = await db.select({
+    expression: expressions,
+    bottle: bottles,
+    distillery: distilleries,
+  })
+    .from(expressions)
+    .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
+    .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
+    .where(
+      or(
+        ilike(expressions.name, searchTerm),
+        ilike(bottles.name, searchTerm),
+        ilike(distilleries.name, searchTerm),
+      )
+    )
+    .limit(10)
+
+  const mapped = results.map(({ expression, bottle, distillery }) => ({
+    expressionId: expression.id,
+    name: expression.name,
+    slug: expression.slug,
+    imageUrl: expression.imageUrl,
+    distillery: distillery.name,
+    bottleType: bottle.type,
+    category: bottle.category,
+  }))
+
+  return NextResponse.json({
+    results: mapped,
+    query: query.trim(),
+  })
 }

@@ -1,26 +1,77 @@
 import NextAuth from 'next-auth'
+import type { NextAuthConfig } from 'next-auth'
+import type { Provider } from 'next-auth/providers'
 import Google from 'next-auth/providers/google'
 import Apple from 'next-auth/providers/apple'
 import Resend from 'next-auth/providers/resend'
-import { DrizzleAdapter } from '@auth/drizzle-adapter'
-import { db } from '@/db'
+import Credentials from 'next-auth/providers/credentials'
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: DrizzleAdapter(db),
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    Apple({
-      clientId: process.env.APPLE_CLIENT_ID!,
-      clientSecret: process.env.APPLE_CLIENT_SECRET!,
-    }),
-    Resend({
-      from: 'Caskit <noreply@caskit.app>',
-    }),
-  ],
+function buildProviders(): Provider[] {
+  const providers: Provider[] = []
+
+  if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+    providers.push(
+      Google({
+        clientId: process.env.AUTH_GOOGLE_ID,
+        clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      })
+    )
+  }
+
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+    providers.push(
+      Apple({
+        clientId: process.env.APPLE_CLIENT_ID,
+        clientSecret: process.env.APPLE_CLIENT_SECRET,
+      })
+    )
+  }
+
+  if (process.env.RESEND_API_KEY) {
+    providers.push(
+      Resend({
+        from: 'Caskit <noreply@caskit.app>',
+      })
+    )
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    providers.push(
+      Credentials({
+        name: 'Dev Login',
+        credentials: {
+          email: { label: 'Email', type: 'email', placeholder: 'dev@caskit.app' },
+        },
+        async authorize(credentials) {
+          const email = credentials?.email as string
+          if (!email) return null
+          return {
+            id: 'dev-user-1',
+            name: email.split('@')[0],
+            email,
+            image: null,
+          }
+        },
+      })
+    )
+  }
+
+  return providers
+}
+
+export const providers = buildProviders()
+
+export const availableProviders = {
+  google: !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET),
+  apple: !!(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET),
+  email: !!process.env.RESEND_API_KEY,
+  dev: process.env.NODE_ENV === 'development',
+}
+
+export const authConfig: NextAuthConfig = {
+  providers,
   session: { strategy: 'jwt' },
+  secret: process.env.AUTH_SECRET || 'dev-secret-change-in-production',
   pages: {
     signIn: '/login',
     newUser: '/onboarding',
@@ -39,4 +90,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session
     },
   },
-})
+}
+
+export const { handlers, signIn, signOut, auth } = NextAuth(authConfig)

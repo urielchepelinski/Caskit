@@ -1,6 +1,6 @@
 'use client'
 
-import { Star, Plus, Check, HelpCircle } from 'lucide-react'
+import { Star, Plus, Check, HelpCircle, Search, RotateCcw } from 'lucide-react'
 import Link from 'next/link'
 
 interface ScanResultProps {
@@ -12,6 +12,8 @@ interface ScanResultProps {
   bottleImage?: string
   distillery?: string
   suggestions?: { expressionId: number; name: string; confidence: number }[]
+  onManualSearch?: () => void
+  onRetry?: () => void
 }
 
 export function ScanResult({
@@ -23,6 +25,8 @@ export function ScanResult({
   bottleImage,
   distillery,
   suggestions,
+  onManualSearch,
+  onRetry,
 }: ScanResultProps) {
   if (!expressionId || confidence < 0.6) {
     return (
@@ -32,24 +36,43 @@ export function ScanResult({
         </div>
         <h2 className="text-lg font-bold mb-2">Not sure about this one</h2>
         <p className="text-sm text-text-secondary mb-6">
-          We couldn&apos;t confidently identify this bottle. Is it one of these?
+          We couldn&apos;t confidently identify this bottle.
+          {suggestions && suggestions.length > 0 ? ' Is it one of these?' : ' Try searching manually.'}
         </p>
         {suggestions && suggestions.length > 0 && (
           <div className="space-y-3 mb-6">
             {suggestions.map((s) => (
-              <button
+              <Link
                 key={s.expressionId}
-                className="w-full p-3 bg-surface rounded-card border border-border text-left flex justify-between items-center"
+                href={`/bottle/${s.expressionId}`}
+                className="w-full p-3 bg-surface rounded-card border border-border text-left flex justify-between items-center block"
               >
                 <span className="text-sm font-medium">{s.name}</span>
                 <span className="text-xs text-text-muted">{Math.round(s.confidence * 100)}%</span>
-              </button>
+              </Link>
             ))}
           </div>
         )}
-        <button className="w-full py-3 bg-surface rounded-card border border-border text-sm font-medium text-text-secondary">
-          Search manually
-        </button>
+        <div className="flex flex-col gap-3">
+          {onManualSearch && (
+            <button
+              onClick={onManualSearch}
+              className="w-full py-3 bg-accent text-white rounded-card text-sm font-medium flex items-center justify-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              Search manually
+            </button>
+          )}
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="w-full py-3 bg-surface rounded-card border border-border text-sm font-medium text-text-secondary flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Scan again
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -57,21 +80,21 @@ export function ScanResult({
   return (
     <div className="p-6">
       <div className="flex flex-col items-center mb-6">
-        <div className="w-12 h-12 mb-3 rounded-full bg-green-50 flex items-center justify-center">
-          <Check className="w-6 h-6 text-green-600" />
+        <div className="w-12 h-12 mb-3 rounded-full bg-accent/10 flex items-center justify-center">
+          <Check className="w-6 h-6 text-accent" />
         </div>
         <p className="text-xs text-text-muted mb-1">
-          Identified via {method === 'cache' ? 'instant match' : method === 'vision_api' ? 'AI analysis' : method}
+          Identified via {method === 'cache' ? 'instant match' : method === 'vision_api' ? 'AI analysis' : method === 'manual' ? 'manual search' : method}
         </p>
       </div>
 
       <Link
         href={`/bottle/${bottleSlug}`}
-        className="block bg-white rounded-card shadow-card border border-border p-4 mb-6"
+        className="block bg-surface rounded-card border border-border p-4 mb-6"
       >
         <div className="flex gap-4 items-center">
           {bottleImage && (
-            <div className="w-16 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface flex items-center justify-center">
+            <div className="w-16 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-background flex items-center justify-center">
               <img src={bottleImage} alt={bottleName} className="h-[90%] w-auto object-contain" />
             </div>
           )}
@@ -90,17 +113,27 @@ export function ScanResult({
       </Link>
 
       <div className="flex gap-3">
-        <button className="flex-1 py-3 bg-text-primary text-white rounded-card text-sm font-semibold flex items-center justify-center gap-2">
+        <button className="flex-1 py-3 bg-accent text-white rounded-card text-sm font-semibold flex items-center justify-center gap-2">
           <Plus className="w-4 h-4" />
           Add to Shelf
         </button>
         <Link
           href={`/bottle/${bottleSlug}`}
-          className="flex-1 py-3 bg-surface border border-border rounded-card text-sm font-medium text-center"
+          className="flex-1 py-3 bg-surface border border-border rounded-card text-sm font-medium text-center flex items-center justify-center"
         >
           View Details
         </Link>
       </div>
+
+      {onManualSearch && (
+        <button
+          onClick={onManualSearch}
+          className="w-full mt-4 py-2 text-sm text-text-muted flex items-center justify-center gap-2"
+        >
+          <Search className="w-3.5 h-3.5" />
+          Not the right bottle? Search manually
+        </button>
+      )}
     </div>
   )
 }

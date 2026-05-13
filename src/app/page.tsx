@@ -5,13 +5,11 @@ import { TopBottlesSection } from '@/components/home/top-bottles-section'
 
 export default function HomePage() {
   return (
-    <>
+    <div className="min-h-screen bg-background pb-20">
       <Header />
-      <div className="pb-20">
-        <DistillerySection />
-        <TopBottlesSection />
-      </div>
+      <DistillerySection />
+      <TopBottlesSection />
       <BottomNav active="home" />
-    </>
+    </div>
   )
 }

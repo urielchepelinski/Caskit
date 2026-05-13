@@ -1,4 +1,5 @@
 import { StarRating } from '@/components/ui/star-rating'
+import Link from 'next/link'
 
 interface BottlePreview {
   name: string
@@ -44,8 +45,8 @@ export function TopBottlesSection() {
   return (
     <section className="px-5 mb-7">
       <div className="flex justify-between items-center mb-3.5">
-        <h2 className="text-lg font-bold">Top in Israel</h2>
-        <a href="/explore/top" className="text-[13px] text-accent font-medium">See all</a>
+        <h2 className="text-lg font-bold text-text-primary">Top in Israel</h2>
+        <Link href="/explore/top" className="text-[13px] text-accent font-medium">View All</Link>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -59,20 +60,20 @@ export function TopBottlesSection() {
 
 function BottleCard({ bottle }: { bottle: BottlePreview }) {
   return (
-    <a
+    <Link
       href={`/bottle/${bottle.slug}`}
-      className="flex gap-3.5 p-3 bg-white rounded-card shadow-card border border-border items-center"
+      className="flex gap-3.5 p-3 bg-surface rounded-card shadow-card border border-border items-center"
     >
-      <div className="w-16 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface flex items-center justify-center">
+      <div className="w-14 h-20 flex-shrink-0 rounded-sm overflow-hidden bg-surface-light flex items-center justify-center">
         <img
           src={bottle.imageUrl}
           alt={bottle.name}
-          className="h-[90%] w-auto object-contain"
+          className="h-[85%] w-auto object-contain"
         />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-semibold mb-0.5 truncate">{bottle.name}</h3>
-        <p className="text-xs text-text-secondary mb-1.5">{bottle.meta}</p>
+        <h3 className="text-sm font-semibold mb-0.5 text-text-primary truncate">{bottle.name}</h3>
+        <p className="text-[11px] text-text-secondary mb-1.5">{bottle.meta}</p>
         <p className="font-story italic text-[11px] text-text-muted leading-[1.4] line-clamp-2">
           {bottle.story}
         </p>
@@ -80,6 +81,6 @@ function BottleCard({ bottle }: { bottle: BottlePreview }) {
           <StarRating rating={bottle.rating} count={bottle.ratingCount} size="sm" />
         </div>
       </div>
-    </a>
+    </Link>
   )
 }
