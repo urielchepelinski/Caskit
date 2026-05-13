@@ -10,7 +10,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:generate": "drizzle-kit generate",
-    "db:seed": "tsx src/db/seed.ts",
+    "db:seed": "tsx scripts/seed.ts",
     "pre-seed": "tsx scripts/pre-seed.ts",
     "generate-hashes": "tsx scripts/generate-hashes.ts",
     "load-test": "k6 run scripts/k6-load-test.js",
