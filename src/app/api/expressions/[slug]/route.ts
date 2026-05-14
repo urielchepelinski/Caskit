@@ -10,6 +10,12 @@ interface Props {
 export async function GET(request: NextRequest, { params }: Props) {
   const { slug } = await params
 
+  // Support both slug and numeric ID lookups
+  const isNumericId = /^\d+$/.test(slug)
+  const whereClause = isNumericId
+    ? eq(expressions.id, parseInt(slug, 10))
+    : eq(expressions.slug, slug)
+
   const result = await db.select({
     expression: expressions,
     bottle: bottles,
@@ -18,7 +24,7 @@ export async function GET(request: NextRequest, { params }: Props) {
     .from(expressions)
     .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
     .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
-    .where(eq(expressions.slug, slug))
+    .where(whereClause)
     .limit(1)
 
   if (!result[0]) {
