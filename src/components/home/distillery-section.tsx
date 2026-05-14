@@ -19,10 +19,13 @@ export async function DistillerySection() {
       .from(distilleries)
       .leftJoin(bottles, eq(bottles.distilleryId, distilleries.id))
       .groupBy(distilleries.id)
-      .orderBy(desc(count(bottles.id)))
+      .orderBy(desc(distilleries.name))
       .limit(8)
 
-    distilleryList = rows.map(r => ({ distillery: r.distillery, bottleCount: Number(r.bottleCount) }))
+    // Sort by bottle count descending in JS since drizzle can't order by aggregate
+    distilleryList = rows
+      .map(r => ({ distillery: r.distillery, bottleCount: Number(r.bottleCount) }))
+      .sort((a, b) => b.bottleCount - a.bottleCount)
   } catch {
     distilleryList = []
   }
