@@ -102,7 +102,8 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="flex justify-between items-center p-4">
+      {/* Header */}
+      <div className="flex-shrink-0 flex justify-between items-center p-4">
         <button onClick={handleClose} className="text-white p-2">
           <X className="w-6 h-6" />
         </button>
@@ -110,46 +111,49 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
         <div className="w-10" />
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center">
+      {/* Camera viewfinder — takes remaining space minus bottom controls */}
+      <div className="flex-1 relative overflow-hidden">
         {!isStreaming && !error && (
-          <div className="flex flex-col items-center gap-4 text-white">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border-2 border-white/30 animate-pulse">
               <Camera className="w-8 h-8" />
             </div>
-            <span className="text-sm">Starting camera...</span>
+            <span className="text-sm mt-4">Starting camera...</span>
           </div>
         )}
 
         {error && (
-          <div className="text-center px-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
-              <Camera className="w-8 h-8 text-white/50" />
-            </div>
-            <p className="text-white/70 text-sm mb-6">{error}</p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 text-white bg-accent mx-auto px-5 py-3 rounded-xl font-medium"
-              >
-                <Upload className="w-4 h-4" />
-                Upload a photo instead
-              </button>
-              <button
-                onClick={startCamera}
-                className="flex items-center gap-2 text-accent mx-auto px-4 py-2 border border-accent/30 rounded-lg"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Try camera again
-              </button>
-              {onManualSearch && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center px-8">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+                <Camera className="w-8 h-8 text-white/50" />
+              </div>
+              <p className="text-white/70 text-sm mb-6">{error}</p>
+              <div className="flex flex-col gap-3">
                 <button
-                  onClick={onManualSearch}
-                  className="flex items-center gap-2 text-white/80 mx-auto px-4 py-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 text-white bg-accent mx-auto px-5 py-3 rounded-xl font-medium"
                 >
-                  <Search className="w-4 h-4" />
-                  Search manually
+                  <Upload className="w-4 h-4" />
+                  Upload a photo instead
                 </button>
-              )}
+                <button
+                  onClick={startCamera}
+                  className="flex items-center gap-2 text-accent mx-auto px-4 py-2 border border-accent/30 rounded-lg"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Try camera again
+                </button>
+                {onManualSearch && (
+                  <button
+                    onClick={onManualSearch}
+                    className="flex items-center gap-2 text-white/80 mx-auto px-4 py-2"
+                  >
+                    <Search className="w-4 h-4" />
+                    Search manually
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -159,7 +163,7 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
           autoPlay
           playsInline
           muted
-          className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
+          className={`absolute inset-0 w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
         />
 
         {isStreaming && (
@@ -170,45 +174,55 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
               <div className="absolute -bottom-px -left-px w-6 h-6 border-b-2 border-l-2 border-accent rounded-bl-2xl" />
               <div className="absolute -bottom-px -right-px w-6 h-6 border-b-2 border-r-2 border-accent rounded-br-2xl" />
             </div>
-            <div className="absolute bottom-24 left-0 right-0 text-center">
-              <p className="text-white/80 text-sm">Point at the bottle label</p>
-            </div>
           </div>
         )}
       </div>
 
-      {isStreaming && (
-        <div className="p-6 pb-8 flex flex-col items-center gap-4">
-          <div className="flex items-center gap-6">
+      {/* Bottom controls — always visible, fixed height */}
+      <div className="flex-shrink-0 pb-safe bg-black/80 backdrop-blur-sm">
+        {isStreaming ? (
+          <div className="px-6 pt-4 pb-6 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <Upload className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={captureFrame}
+                className="rounded-full flex items-center justify-center shadow-lg"
+                style={{ width: '72px', height: '72px', background: '#C8974C' }}
+              >
+                <div
+                  className="rounded-full border-4 border-white/90"
+                  style={{ width: '60px', height: '60px' }}
+                />
+              </button>
+              <div className="w-12 h-12" />
+            </div>
+            {onManualSearch && (
+              <button
+                onClick={() => { stopCamera(); onManualSearch() }}
+                className="flex items-center gap-2 text-white/60 text-sm"
+              >
+                <Search className="w-3.5 h-3.5" />
+                Can&apos;t scan? Search manually
+              </button>
+            )}
+          </div>
+        ) : !error ? (
+          <div className="px-6 pt-4 pb-6 flex flex-col items-center gap-3">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"
+              className="flex items-center gap-2 text-white bg-accent px-5 py-3 rounded-xl font-medium text-sm"
             >
-              <Upload className="w-5 h-5 text-white" />
+              <Upload className="w-4 h-4" />
+              Upload a photo
             </button>
-            <button
-              onClick={captureFrame}
-              className="rounded-full flex items-center justify-center shadow-lg"
-              style={{ width: '72px', height: '72px', background: '#C8974C' }}
-            >
-              <div
-                className="rounded-full border-4 border-white/90"
-                style={{ width: '60px', height: '60px' }}
-              />
-            </button>
-            <div className="w-12 h-12" />
           </div>
-          {onManualSearch && (
-            <button
-              onClick={() => { stopCamera(); onManualSearch() }}
-              className="flex items-center gap-2 text-white/60 text-sm"
-            >
-              <Search className="w-3.5 h-3.5" />
-              Can&apos;t scan? Search manually
-            </button>
-          )}
-        </div>
-      )}
+        ) : null}
+      </div>
 
       <input
         ref={fileInputRef}
