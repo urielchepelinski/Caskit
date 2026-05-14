@@ -1,13 +1,14 @@
 import { db } from '@/db'
-import { expressions, bottles, distilleries } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { expressions, bottles, distilleries, reviews, users } from '@/db/schema'
+import { eq, desc } from 'drizzle-orm'
 import { notFound } from 'next/navigation'
 import { FlavorBar } from '@/components/ui/flavor-bar'
 import { SectionLabel } from '@/components/ui/section-label'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { BottleImage } from '@/components/bottle/bottle-image'
 import { BottleActions } from '@/components/bottle/bottle-actions'
-import { ArrowLeft } from 'lucide-react'
+import { ReviewList } from '@/components/reviews/review-list'
+import { ArrowLeft, Star } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {
@@ -36,6 +37,36 @@ export default async function BottleDetailPage({ params }: Props) {
   if (!result[0]) return notFound()
 
   const { expression, bottle, distillery } = result[0]
+
+  // Fetch community reviews
+  let expressionReviews: Array<{
+    id: number; score: number; nose: string | null; palate: string | null
+    finish: string | null; liked: boolean | null; createdAt: Date
+    user: { name: string | null; avatarUrl: string | null }
+  }> = []
+  try {
+    const reviewRows = await db.select({
+      review: reviews,
+      user: { name: users.name, avatarUrl: users.avatarUrl },
+    })
+      .from(reviews)
+      .innerJoin(users, eq(reviews.userId, users.id))
+      .where(eq(reviews.expressionId, expression.id))
+      .orderBy(desc(reviews.createdAt))
+      .limit(20)
+
+    expressionReviews = reviewRows.map(r => ({
+      id: r.review.id,
+      score: r.review.score,
+      nose: r.review.nose,
+      palate: r.review.palate,
+      finish: r.review.finish,
+      liked: r.review.liked,
+      createdAt: r.review.createdAt,
+      user: r.user,
+    }))
+  } catch {}
+
   const flavors = (expression.flavorProfile ?? {}) as Record<string, number>
 
   const flavorEntries = Object.entries(flavors)
@@ -83,7 +114,7 @@ export default async function BottleDetailPage({ params }: Props) {
           {expression.avgCommunityScore && (
             <div className="flex-1 bg-surface rounded-xl p-3.5 text-center border border-[rgba(200,151,76,0.1)]">
               <div className="font-display text-[28px] font-bold text-accent mb-0.5">
-                {Math.round(expression.avgCommunityScore)}
+                {Math.round(expression.avgCommunityScore)}<span className="text-[14px] text-text-muted font-normal">/100</span>
               </div>
               <div className="text-[10px] text-text-secondary uppercase tracking-wide">Community</div>
               <div className="text-[10px] text-text-secondary mt-0.5">{expression.reviewCount} ratings</div>
@@ -125,6 +156,11 @@ export default async function BottleDetailPage({ params }: Props) {
             <DetailItem label="Filtration" value={expression.chillFiltered ? 'Chill-Filtered' : 'Non Chill-Filtered'} />
           )}
         </div>
+      </div>
+
+      <div className="px-5 mb-6">
+        <SectionLabel>Community Reviews</SectionLabel>
+        <ReviewList reviews={expressionReviews} />
       </div>
 
       <BottleActions

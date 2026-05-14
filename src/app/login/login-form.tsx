@@ -31,7 +31,14 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
 
     try {
       // Use getCsrfToken + direct fetch to avoid signIn() hanging bug in next-auth v5 beta
-      const csrfRes = await fetch('/api/auth/csrf')
+      const csrfRes = await fetch('/api/auth/csrf', {
+        signal: AbortSignal.timeout(10000),
+      })
+      if (!csrfRes.ok) {
+        setError('Connection error. Please try again.')
+        setLoading(false)
+        return
+      }
       const { csrfToken } = await csrfRes.json()
 
       const res = await fetch('/api/auth/callback/credentials', {
@@ -44,6 +51,7 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
           json: 'true',
         }),
         redirect: 'manual',
+        signal: AbortSignal.timeout(10000),
       })
 
       // next-auth returns a redirect (302) on success, or 200 with error URL on failure
@@ -57,9 +65,13 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
       }
 
       // Success — force full page reload to pick up session cookie
-      window.location.href = '/'
-    } catch {
-      setError('Something went wrong. Please try again.')
+      window.location.href = justRegistered ? '/onboarding' : '/'
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'TimeoutError') {
+        setError('Connection timed out. Please check your internet and try again.')
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
       setLoading(false)
     }
   }
@@ -143,7 +155,9 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
+                aria-label="Email address"
+                autoComplete="email"
+                className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:ring-2 focus:ring-[#C8974C] focus:border-[#C8974C]"
               />
             </div>
             <div className="relative">
@@ -154,13 +168,15 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:border-[#C8974C]"
+                aria-label="Password"
+                autoComplete="current-password"
+                className="w-full pl-10 pr-4 py-3 bg-[#F8F5F0] border border-[#E8E2DA] rounded-xl text-sm text-[#1A1612] placeholder-[#8A7E72] focus:outline-none focus:ring-2 focus:ring-[#C8974C] focus:border-[#C8974C]"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#C8974C] text-white rounded-xl text-sm font-semibold hover:bg-[#A67B3D] active:bg-[#A67B3D] transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-[#1A1612] text-white rounded-xl text-sm font-semibold hover:bg-[#2d2520] active:bg-[#2d2520] transition-colors disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

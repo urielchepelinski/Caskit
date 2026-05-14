@@ -5,7 +5,8 @@ import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { BottleImage } from '@/components/bottle/bottle-image'
 import Link from 'next/link'
-import { Compass, Star, Globe, TrendingUp } from 'lucide-react'
+import { Compass, Star, Globe, TrendingUp, Search } from 'lucide-react'
+import { SearchBar } from '@/components/explore/search-bar'
 
 const CATEGORIES = [
   { value: 'scotch', label: 'Scotch', emoji: '\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC73\uDB40\uDC63\uDB40\uDC74\uDB40\uDC7F' },
@@ -61,6 +62,10 @@ export default async function ExplorePage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
+
+      <section className="px-5 mb-4">
+        <SearchBar />
+      </section>
 
       <section className="px-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
