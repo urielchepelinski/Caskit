@@ -11,10 +11,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const preferences = await request.json()
+    const body = await request.json()
+    const { country, city, lat, lng, ...preferences } = body
+
+    const update: Record<string, unknown> = { preferences, updatedAt: new Date() }
+    if (country) update.country = country
+    if (city) update.city = city
+    if (lat != null) update.lat = lat
+    if (lng != null) update.lng = lng
 
     await db.update(users)
-      .set({ preferences, updatedAt: new Date() })
+      .set(update)
       .where(eq(users.id, session.user.id))
 
     return NextResponse.json({ success: true })

@@ -4,8 +4,13 @@ import { distilleries, bottles } from '@/db/schema'
 import { eq, count, desc } from 'drizzle-orm'
 import Link from 'next/link'
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller'
+import { getCountryName } from '@/lib/geo'
 
-export async function DistillerySection() {
+interface Props {
+  country?: string | null
+}
+
+export async function DistillerySection({ country }: Props) {
   let distilleryList: Array<{
     distillery: typeof distilleries.$inferSelect
     bottleCount: number
@@ -20,22 +25,36 @@ export async function DistillerySection() {
       .leftJoin(bottles, eq(bottles.distilleryId, distilleries.id))
       .groupBy(distilleries.id)
       .orderBy(desc(distilleries.name))
-      .limit(8)
+      .limit(12)
 
-    // Sort by bottle count descending in JS since drizzle can't order by aggregate
+    // Sort by bottle count descending
     distilleryList = rows
       .map(r => ({ distillery: r.distillery, bottleCount: Number(r.bottleCount) }))
       .sort((a, b) => b.bottleCount - a.bottleCount)
+
+    // If user has a country, prioritize local distilleries at the front
+    if (country) {
+      const local = distilleryList.filter(d => d.distillery.country === country)
+      const rest = distilleryList.filter(d => d.distillery.country !== country)
+      distilleryList = [...local, ...rest].slice(0, 8)
+    } else {
+      distilleryList = distilleryList.slice(0, 8)
+    }
   } catch {
     distilleryList = []
   }
 
   if (distilleryList.length === 0) return null
 
+  const hasLocalDistilleries = country && distilleryList.some(d => d.distillery.country === country)
+  const title = hasLocalDistilleries
+    ? `Distilleries in ${getCountryName(country!)}`
+    : 'Popular Distilleries'
+
   return (
     <section className="mb-7">
       <div className="flex justify-between items-center mb-3.5 px-5">
-        <h2 className="text-lg font-bold text-text-primary">Popular Distilleries</h2>
+        <h2 className="text-lg font-bold text-text-primary">{title}</h2>
         <Link href="/explore/distilleries" className="text-[13px] text-accent font-medium">View All</Link>
       </div>
 

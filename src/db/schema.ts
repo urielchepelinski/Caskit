@@ -93,6 +93,10 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   subscriptionTier: text('subscription_tier').default('free').notNull(), // free, premium
   stripeCustomerId: text('stripe_customer_id'),
+  country: varchar('country', { length: 2 }), // ISO 3166-1 alpha-2 (US, GB, IL, etc.)
+  city: text('city'),
+  lat: real('lat'),
+  lng: real('lng'),
   preferences: jsonb('preferences').$type<{
     preferredStyle?: string
     smokiness?: number
@@ -103,6 +107,7 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   emailIdx: uniqueIndex('users_email_idx').on(table.email),
+  countryIdx: index('users_country_idx').on(table.country),
 }))
 
 export const collections = pgTable('collections', {

@@ -10,6 +10,13 @@ interface BottleImageProps {
   placeholderClassName?: string
 }
 
+function proxyUrl(src: string): string {
+  // Already a relative/internal URL — use as-is
+  if (src.startsWith('/')) return src
+  // Route external images through our proxy to bypass hotlink blocking
+  return `/api/image-proxy?url=${encodeURIComponent(src)}`
+}
+
 export function BottleImage({ src, alt, className = 'h-[85%] w-auto object-contain', placeholderClassName = 'w-6 h-12' }: BottleImageProps) {
   const [failed, setFailed] = useState(false)
 
@@ -19,10 +26,9 @@ export function BottleImage({ src, alt, className = 'h-[85%] w-auto object-conta
 
   return (
     <img
-      src={src}
+      src={proxyUrl(src)}
       alt={alt}
       className={className}
-      referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
     />
   )

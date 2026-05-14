@@ -21,8 +21,14 @@ const REGIONS = [
   { value: 'speyside', label: 'Speyside', country: 'Scotland', description: 'Fruity & elegant' },
   { value: 'highland', label: 'Highland', country: 'Scotland', description: 'Diverse & robust' },
   { value: 'kentucky', label: 'Kentucky', country: 'USA', description: 'Sweet & oaky' },
+  { value: 'tennessee', label: 'Tennessee', country: 'USA', description: 'Charcoal-mellowed' },
   { value: 'campbeltown', label: 'Campbeltown', country: 'Scotland', description: 'Briny & complex' },
   { value: 'lowland', label: 'Lowland', country: 'Scotland', description: 'Light & floral' },
+  { value: 'japan', label: 'Japan', country: 'Japan', description: 'Refined & delicate' },
+  { value: 'india', label: 'India', country: 'India', description: 'Tropical maturation' },
+  { value: 'taiwan', label: 'Taiwan', country: 'Taiwan', description: 'Subtropical & bold' },
+  { value: 'ireland', label: 'Ireland', country: 'Ireland', description: 'Triple-distilled & smooth' },
+  { value: 'australia', label: 'Australia', country: 'Australia', description: 'New world craft' },
 ]
 
 export default async function ExplorePage() {
@@ -181,7 +187,7 @@ export default async function ExplorePage() {
           <Link href="/explore/regions" className="text-[12px] text-accent font-medium">See All</Link>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
-          {REGIONS.map((region) => (
+          {REGIONS.slice(0, 8).map((region) => (
             <Link
               key={region.value}
               href={`/explore/region/${region.value}`}

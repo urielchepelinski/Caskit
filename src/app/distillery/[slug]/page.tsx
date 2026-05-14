@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { notFound } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { BottleImage } from '@/components/bottle/bottle-image'
 import { StarRating } from '@/components/ui/star-rating'
 import { MapPin, Globe, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
@@ -35,7 +36,7 @@ export default async function DistilleryPage({ params }: Props) {
       {distillery.imageUrl && (
         <div
           className="w-full h-48 bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${distillery.imageUrl})` }}
+          style={{ backgroundImage: `url(/api/image-proxy?url=${encodeURIComponent(distillery.imageUrl)})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
@@ -87,11 +88,9 @@ export default async function DistilleryPage({ params }: Props) {
               href={`/bottle/${expression.slug}`}
               className="flex gap-3 p-3 bg-white rounded-card shadow-card border border-border items-center"
             >
-              {expression.imageUrl && (
-                <div className="w-12 h-18 flex-shrink-0 rounded-lg overflow-hidden bg-surface flex items-center justify-center">
-                  <img src={expression.imageUrl} alt={expression.name} className="h-16 w-auto object-contain" />
-                </div>
-              )}
+              <div className="w-12 h-18 flex-shrink-0 rounded-lg overflow-hidden bg-surface flex items-center justify-center">
+                <BottleImage src={expression.imageUrl} alt={expression.name} className="h-16 w-auto object-contain" placeholderClassName="w-6 h-12" />
+              </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold truncate">{expression.name}</h3>
                 <p className="text-xs text-text-secondary">

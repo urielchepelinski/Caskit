@@ -99,7 +99,7 @@ export function ScanResult({
         <div className="flex gap-4 items-center">
           {bottleImage && (
             <div className="w-16 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-background flex items-center justify-center">
-              <img src={bottleImage} alt={bottleName} className="h-[90%] w-auto object-contain" />
+              <img src={`/api/image-proxy?url=${encodeURIComponent(bottleImage)}`} alt={bottleName} className="h-[90%] w-auto object-contain" />
             </div>
           )}
           <div className="flex-1">

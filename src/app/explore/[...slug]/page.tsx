@@ -201,12 +201,8 @@ async function DistilleriesPage() {
                 href={`/distillery/${d.slug}`}
                 className="flex gap-3 p-3 bg-surface rounded-card border border-border items-center"
               >
-                <div className="w-12 h-12 flex-shrink-0 rounded-full bg-surface-light flex items-center justify-center overflow-hidden">
-                  {d.logoUrl ? (
-                    <img src={d.logoUrl} alt={d.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-lg font-bold text-accent">{d.name.charAt(0)}</span>
-                  )}
+                <div className="w-12 h-12 flex-shrink-0 rounded-full bg-accent/10 flex items-center justify-center overflow-hidden">
+                  <span className="text-lg font-bold text-accent">{d.name.charAt(0)}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-semibold text-text-primary truncate">{d.name}</h3>

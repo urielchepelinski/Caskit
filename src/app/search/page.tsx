@@ -3,6 +3,7 @@ import { expressions, bottles, distilleries } from '@/db/schema'
 import { eq, ilike, or, sql } from 'drizzle-orm'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { BottleImage } from '@/components/bottle/bottle-image'
 import Link from 'next/link'
 import { Star } from 'lucide-react'
 
@@ -65,11 +66,9 @@ export default async function SearchPage({ searchParams }: Props) {
               href={`/bottle/${expression.slug}`}
               className="flex gap-3 p-3 bg-white rounded-card shadow-card border border-border items-center"
             >
-              {expression.imageUrl && (
-                <div className="w-12 h-18 flex-shrink-0 rounded-lg overflow-hidden bg-surface flex items-center justify-center">
-                  <img src={expression.imageUrl} alt={expression.name} className="h-16 w-auto object-contain" />
-                </div>
-              )}
+              <div className="w-12 h-18 flex-shrink-0 rounded-lg overflow-hidden bg-surface flex items-center justify-center">
+                <BottleImage src={expression.imageUrl} alt={expression.name} className="h-16 w-auto object-contain" placeholderClassName="w-6 h-12" />
+              </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold truncate">{expression.name}</h3>
                 <p className="text-xs text-text-secondary">{distillery.name} &middot; {bottle.type}</p>
