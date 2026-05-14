@@ -24,7 +24,7 @@ export default function SignupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(30000),
       })
 
       const data = await res.json()
@@ -58,7 +58,7 @@ export default function SignupPage() {
         </p>
 
         <button
-          onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+          onClick={() => { window.location.href = '/api/auth/signin/google?callbackUrl=/onboarding' }}
           className="w-full py-3 px-4 mb-4 bg-white border border-[#E8E2DA] rounded-xl text-sm font-medium text-gray-800 flex items-center justify-center gap-3 shadow-sm"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
