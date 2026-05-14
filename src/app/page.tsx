@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Header } from '@/components/layout/header'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { DistillerySection } from '@/components/home/distillery-section'
@@ -9,29 +10,56 @@ import { db } from '@/db'
 import { users } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
-export default async function HomePage() {
-  // Resolve user's country: saved preference > Vercel geo header > fallback null
-  let userCountry: string | null = null
-
-  const session = await auth()
-  if (session?.user?.id) {
-    const [user] = await db.select({ country: users.country })
-      .from(users)
-      .where(eq(users.id, session.user.id))
-      .limit(1)
-    if (user?.country) userCountry = user.country
+async function resolveCountry(): Promise<string | null> {
+  try {
+    const session = await auth()
+    if (session?.user?.id) {
+      const [user] = await db.select({ country: users.country })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1)
+      if (user?.country) return user.country
+    }
+  } catch {
+    // auth or DB failure — fall through to geo header
   }
 
-  if (!userCountry) {
-    userCountry = await getCountryFromHeaders()
+  try {
+    return await getCountryFromHeaders()
+  } catch {
+    return null
   }
+}
+
+function SectionSkeleton() {
+  return (
+    <div className="px-5 space-y-3 mb-7">
+      <div className="h-5 w-36 rounded bg-surface animate-pulse" />
+      <div className="h-20 rounded-xl bg-surface animate-pulse" />
+      <div className="h-20 rounded-xl bg-surface animate-pulse" />
+    </div>
+  )
+}
+
+async function HomeContent() {
+  const userCountry = await resolveCountry()
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header />
+    <>
       <LocalTrendingSection country={userCountry} />
       <DistillerySection country={userCountry} />
       <TopBottlesSection />
+    </>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Header />
+      <Suspense fallback={<SectionSkeleton />}>
+        <HomeContent />
+      </Suspense>
       <BottomNav active="home" />
     </div>
   )
