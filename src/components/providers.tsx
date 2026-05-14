@@ -8,7 +8,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider
       refetchInterval={0}
       refetchOnWindowFocus={false}
-      refetchWhenOffline={false}
     >
       <ToastProvider>{children}</ToastProvider>
     </SessionProvider>
