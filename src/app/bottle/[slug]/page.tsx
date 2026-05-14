@@ -6,7 +6,8 @@ import { FlavorBar } from '@/components/ui/flavor-bar'
 import { SectionLabel } from '@/components/ui/section-label'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { BottleImage } from '@/components/bottle/bottle-image'
-import { ArrowLeft, Share2, Plus, Pencil } from 'lucide-react'
+import { BottleActions } from '@/components/bottle/bottle-actions'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 interface Props {
@@ -47,7 +48,7 @@ export default async function BottleDetailPage({ params }: Props) {
         <Link href="/">
           <ArrowLeft className="w-[22px] h-[22px] text-text-muted" strokeWidth={1.5} />
         </Link>
-        <Share2 className="w-[22px] h-[22px] text-text-muted" strokeWidth={1.5} />
+        <div />
       </div>
 
       <div className="flex flex-col items-center px-5 py-5 relative">
@@ -126,16 +127,11 @@ export default async function BottleDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="px-5 pb-24 flex flex-col gap-2.5">
-        <button className="w-full py-4 bg-accent text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
-          <Plus className="w-[18px] h-[18px]" strokeWidth={2} />
-          Add to Collection
-        </button>
-        <button className="w-full py-4 bg-transparent text-accent border-[1.5px] border-[#A67B3D] rounded-xl text-sm font-medium flex items-center justify-center gap-2">
-          <Pencil className="w-[18px] h-[18px]" strokeWidth={1.5} />
-          Rate This Whiskey
-        </button>
-      </div>
+      <BottleActions
+        expressionId={expression.id}
+        expressionName={expression.name}
+        slug={slug}
+      />
 
       <BottomNav />
     </div>

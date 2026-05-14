@@ -115,6 +115,7 @@ async function tryVisionApi(imageBuffer: Buffer): Promise<RecognitionResult | nu
     const suggestions = matches.map(m => ({
       expressionId: m.expression.id,
       name: m.expression.name,
+      slug: m.expression.slug,
       confidence: m.expression.slug === candidateSlug ? (parsed.confidence ?? 0.8) : 0.5,
     }))
 

@@ -1,86 +1,86 @@
-import { StarRating } from '@/components/ui/star-rating'
+import { db } from '@/db'
+import { expressions, bottles, distilleries } from '@/db/schema'
+import { eq, desc, isNotNull } from 'drizzle-orm'
+import { BottleImage } from '@/components/bottle/bottle-image'
+import { Star } from 'lucide-react'
 import Link from 'next/link'
 
-interface BottlePreview {
-  name: string
-  meta: string
-  story: string
-  imageUrl: string
-  rating: number
-  ratingCount: string
-  slug: string
-}
+export async function TopBottlesSection() {
+  let topBottles: Array<{
+    expression: typeof expressions.$inferSelect
+    bottle: typeof bottles.$inferSelect
+    distillery: typeof distilleries.$inferSelect
+  }> = []
 
-const topBottles: BottlePreview[] = [
-  {
-    name: 'M&H Apex Dead Sea',
-    meta: 'Single Malt \u00b7 Terroir Series \u00b7 57.4%',
-    story: '\u201cSweet French vanilla and mocha, a rush of warm cinnamon and coriander, long finish with candied ginger and sea salt...\u201d',
-    imageUrl: 'https://mh-distillery.com/wp-content/uploads/2025/05/apex-dead-sea-terroir-874X918-1.png',
-    rating: 4.6,
-    ratingCount: '1,842',
-    slug: 'mh-apex-dead-sea-terroir',
-  },
-  {
-    name: 'M&H Apex Jerusalem',
-    meta: 'Single Malt \u00b7 Terroir Series \u00b7 55.4%',
-    story: '\u201cBright green apples with citrus leaf and subtle oak, fresh pine, toffee apple finish...\u201d',
-    imageUrl: 'https://mh-distillery.com/wp-content/uploads/2025/05/apex-jerusalem-terroir-874X918-1.png',
-    rating: 4.4,
-    ratingCount: '956',
-    slug: 'mh-apex-jerusalem-terroir',
-  },
-  {
-    name: 'Pelter Single Malt 10Y',
-    meta: 'Single Malt \u00b7 Bourbon Cask \u00b7 46%',
-    story: '\u201cA decade of Golan Heights maturation, pecan pie, lemon drizzle cake, warm oak and honey...\u201d',
-    imageUrl: 'https://media.getmood.io/warehouse/dynamic/731109.jpg',
-    rating: 4.3,
-    ratingCount: '412',
-    slug: 'pelter-single-malt-10y',
-  },
-]
+  try {
+    topBottles = await db.select({
+      expression: expressions,
+      bottle: bottles,
+      distillery: distilleries,
+    })
+      .from(expressions)
+      .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
+      .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
+      .where(isNotNull(expressions.avgCommunityScore))
+      .orderBy(desc(expressions.avgCommunityScore))
+      .limit(5)
+  } catch {
+    topBottles = []
+  }
 
-export function TopBottlesSection() {
+  if (topBottles.length === 0) {
+    return (
+      <section className="px-5 mb-7">
+        <div className="flex justify-between items-center mb-3.5">
+          <h2 className="text-lg font-bold text-text-primary">Top Rated</h2>
+          <Link href="/explore/top" className="text-[13px] text-accent font-medium">View All</Link>
+        </div>
+        <div className="rounded-card bg-surface border border-border p-5 text-center">
+          <Star className="w-8 h-8 text-accent/30 mx-auto mb-2" strokeWidth={1} />
+          <p className="text-xs text-text-muted">Rate bottles to see top picks here</p>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="px-5 mb-7">
       <div className="flex justify-between items-center mb-3.5">
-        <h2 className="text-lg font-bold text-text-primary">Top in Israel</h2>
+        <h2 className="text-lg font-bold text-text-primary">Top Rated</h2>
         <Link href="/explore/top" className="text-[13px] text-accent font-medium">View All</Link>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {topBottles.map((bottle) => (
-          <BottleCard key={bottle.slug} bottle={bottle} />
+      <div className="flex flex-col gap-2.5">
+        {topBottles.map(({ expression, bottle, distillery: dist }, index) => (
+          <Link
+            key={expression.id}
+            href={`/bottle/${expression.slug}`}
+            className="flex gap-3.5 p-3 bg-surface rounded-card shadow-card border border-border items-center"
+          >
+            <div className="w-7 h-7 flex-shrink-0 rounded-full bg-accent/10 flex items-center justify-center">
+              <span className="text-xs font-bold text-accent">{index + 1}</span>
+            </div>
+            <div className="w-12 h-16 flex-shrink-0 rounded-sm overflow-hidden bg-surface-light flex items-center justify-center">
+              <BottleImage src={expression.imageUrl} alt={expression.name} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-text-primary truncate">{expression.name}</h3>
+              <p className="text-[11px] text-text-secondary">{dist.name}</p>
+              {expression.story && (
+                <p className="font-story italic text-[11px] text-text-muted leading-[1.4] line-clamp-1 mt-0.5">
+                  {expression.story}
+                </p>
+              )}
+            </div>
+            {expression.avgCommunityScore && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Star className="w-3.5 h-3.5 fill-accent text-accent" />
+                <span className="text-sm font-bold text-text-primary">{Math.round(expression.avgCommunityScore)}</span>
+              </div>
+            )}
+          </Link>
         ))}
       </div>
     </section>
-  )
-}
-
-function BottleCard({ bottle }: { bottle: BottlePreview }) {
-  return (
-    <Link
-      href={`/bottle/${bottle.slug}`}
-      className="flex gap-3.5 p-3 bg-surface rounded-card shadow-card border border-border items-center"
-    >
-      <div className="w-14 h-20 flex-shrink-0 rounded-sm overflow-hidden bg-surface-light flex items-center justify-center">
-        <img
-          src={bottle.imageUrl}
-          alt={bottle.name}
-          className="h-[85%] w-auto object-contain"
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold mb-0.5 text-text-primary truncate">{bottle.name}</h3>
-        <p className="text-[11px] text-text-secondary mb-1.5">{bottle.meta}</p>
-        <p className="font-story italic text-[11px] text-text-muted leading-[1.4] line-clamp-2">
-          {bottle.story}
-        </p>
-        <div className="mt-1.5">
-          <StarRating rating={bottle.rating} count={bottle.ratingCount} size="sm" />
-        </div>
-      </div>
-    </Link>
   )
 }

@@ -5,7 +5,7 @@ export interface RecognitionResult {
   confidence: number
   method: PipelineStage
   rawData?: Record<string, unknown>
-  suggestions?: { expressionId: number; name: string; confidence: number }[]
+  suggestions?: { expressionId: number; name: string; slug: string; confidence: number }[]
 }
 
 export interface VisionApiResponse {

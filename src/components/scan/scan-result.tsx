@@ -11,7 +11,9 @@ interface ScanResultProps {
   bottleSlug?: string
   bottleImage?: string
   distillery?: string
-  suggestions?: { expressionId: number; name: string; confidence: number }[]
+  rating?: number | null
+  suggestions?: { expressionId: number; name: string; slug: string; confidence: number }[]
+  onAddToShelf?: () => void
   onManualSearch?: () => void
   onRetry?: () => void
 }
@@ -24,7 +26,9 @@ export function ScanResult({
   bottleSlug,
   bottleImage,
   distillery,
+  rating,
   suggestions,
+  onAddToShelf,
   onManualSearch,
   onRetry,
 }: ScanResultProps) {
@@ -44,7 +48,7 @@ export function ScanResult({
             {suggestions.map((s) => (
               <Link
                 key={s.expressionId}
-                href={`/bottle/${s.expressionId}`}
+                href={`/bottle/${s.slug}`}
                 className="w-full p-3 bg-surface rounded-card border border-border text-left flex justify-between items-center block"
               >
                 <span className="text-sm font-medium">{s.name}</span>
@@ -103,17 +107,22 @@ export function ScanResult({
             {distillery && (
               <p className="text-sm text-text-secondary">{distillery}</p>
             )}
-            <div className="flex items-center gap-1 mt-2">
-              <Star className="w-3.5 h-3.5 fill-accent text-accent" />
-              <span className="text-sm font-semibold">4.6</span>
-              <span className="text-xs text-text-muted">community</span>
-            </div>
+            {rating != null && rating > 0 && (
+              <div className="flex items-center gap-1 mt-2">
+                <Star className="w-3.5 h-3.5 fill-accent text-accent" />
+                <span className="text-sm font-semibold">{Math.round(rating)}</span>
+                <span className="text-xs text-text-muted">community</span>
+              </div>
+            )}
           </div>
         </div>
       </Link>
 
       <div className="flex gap-3">
-        <button className="flex-1 py-3 bg-accent text-white rounded-card text-sm font-semibold flex items-center justify-center gap-2">
+        <button
+          onClick={onAddToShelf}
+          className="flex-1 py-3 bg-accent text-white rounded-card text-sm font-semibold flex items-center justify-center gap-2"
+        >
           <Plus className="w-4 h-4" />
           Add to Shelf
         </button>

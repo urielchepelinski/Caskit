@@ -1,4 +1,4 @@
-import { Search, Bell } from 'lucide-react'
+import { Search } from 'lucide-react'
 import Link from 'next/link'
 
 export function Header() {
@@ -9,14 +9,12 @@ export function Header() {
           Cas<span className="text-accent">kit</span>
         </h1>
       </Link>
-      <div className="flex gap-3">
-        <button className="w-11 h-11 rounded-full bg-surface border border-border flex items-center justify-center">
-          <Search className="w-[18px] h-[18px] text-text-muted" strokeWidth={1.5} />
-        </button>
-        <button className="w-11 h-11 rounded-full bg-surface border border-border flex items-center justify-center">
-          <Bell className="w-[18px] h-[18px] text-text-muted" strokeWidth={1.5} />
-        </button>
-      </div>
+      <Link
+        href="/explore"
+        className="w-11 h-11 rounded-full bg-surface border border-border flex items-center justify-center"
+      >
+        <Search className="w-[18px] h-[18px] text-text-muted" strokeWidth={1.5} />
+      </Link>
     </header>
   )
 }

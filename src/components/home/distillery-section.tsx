@@ -1,134 +1,68 @@
-import { MapPin, CheckCircle } from 'lucide-react'
-import { StarRating } from '@/components/ui/star-rating'
+import { MapPin } from 'lucide-react'
+import { db } from '@/db'
+import { distilleries, bottles } from '@/db/schema'
+import { eq, count, desc } from 'drizzle-orm'
 import Link from 'next/link'
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller'
 
-interface Distillery {
-  name: string
-  slug: string
-  location: string
-  imageUrl: string
-  logoUrl?: string
-  logoText?: string
-  expressionCount: number
-  rating: number
-  ratingCount: string
-  verified: boolean
-}
+export async function DistillerySection() {
+  let distilleryList: Array<{
+    distillery: typeof distilleries.$inferSelect
+    bottleCount: number
+  }> = []
 
-const distilleries: Distillery[] = [
-  {
-    name: 'Milk & Honey',
-    slug: 'milk-and-honey',
-    location: 'Distillery in Tel Aviv',
-    imageUrl: 'https://mh-distillery.com/wp-content/uploads/2023/01/Series-banner_1920x723-apex-terroir.jpg',
-    logoUrl: 'https://mh-distillery.com/wp-content/uploads/2022/07/logo-vector.svg',
-    expressionCount: 24,
-    rating: 4.2,
-    ratingCount: '12,450',
-    verified: true,
-  },
-  {
-    name: 'Golan Heights',
-    slug: 'golan-heights',
-    location: 'Distillery in Katzrin',
-    imageUrl: 'https://www.golanispirit.com/cdn/shop/files/about-us.jpg?v=1684073125',
-    logoText: 'GH',
-    expressionCount: 18,
-    rating: 3.9,
-    ratingCount: '8,230',
-    verified: true,
-  },
-  {
-    name: 'Pelter',
-    slug: 'pelter',
-    location: 'Distillery in Upper Galilee',
-    imageUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600&h=300&fit=crop',
-    logoText: 'PL',
-    expressionCount: 12,
-    rating: 4.0,
-    ratingCount: '5,120',
-    verified: true,
-  },
-  {
-    name: 'Lagavulin',
-    slug: 'lagavulin',
-    location: 'Distillery in Islay, Scotland',
-    imageUrl: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=600&h=300&fit=crop',
-    logoText: 'LV',
-    expressionCount: 8,
-    rating: 4.6,
-    ratingCount: '45,200',
-    verified: true,
-  },
-  {
-    name: 'The Macallan',
-    slug: 'macallan',
-    location: 'Distillery in Speyside, Scotland',
-    imageUrl: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=600&h=300&fit=crop',
-    logoText: 'MC',
-    expressionCount: 15,
-    rating: 4.5,
-    ratingCount: '62,800',
-    verified: true,
-  },
-]
+  try {
+    const rows = await db.select({
+      distillery: distilleries,
+      bottleCount: count(bottles.id),
+    })
+      .from(distilleries)
+      .leftJoin(bottles, eq(bottles.distilleryId, distilleries.id))
+      .groupBy(distilleries.id)
+      .orderBy(desc(count(bottles.id)))
+      .limit(8)
 
-export function DistillerySection() {
+    distilleryList = rows.map(r => ({ distillery: r.distillery, bottleCount: Number(r.bottleCount) }))
+  } catch {
+    distilleryList = []
+  }
+
+  if (distilleryList.length === 0) return null
+
   return (
     <section className="mb-7">
       <div className="flex justify-between items-center mb-3.5 px-5">
-        <h2 className="text-lg font-bold text-text-primary">Distilleries Near You</h2>
+        <h2 className="text-lg font-bold text-text-primary">Popular Distilleries</h2>
         <Link href="/explore/distilleries" className="text-[13px] text-accent font-medium">View All</Link>
-      </div>
-      <div className="flex items-center gap-1.5 mb-4 text-[13px] text-text-secondary px-5">
-        <MapPin className="w-3.5 h-3.5 text-accent" strokeWidth={1.5} />
-        Tel Aviv, Israel
       </div>
 
       <HorizontalScroller>
-        {distilleries.map((d) => (
-          <DistilleryCard key={d.name} distillery={d} />
+        {distilleryList.map(({ distillery: d, bottleCount }) => (
+          <Link
+            key={d.id}
+            href={`/distillery/${d.slug}`}
+            className="min-w-[200px] max-w-[200px] bg-surface rounded-card overflow-hidden shadow-card border border-border flex-shrink-0 block p-4"
+          >
+            <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-3">
+              {d.logoUrl ? (
+                <img src={d.logoUrl} alt={d.name} className="w-8 h-8 object-contain rounded-full" />
+              ) : (
+                <span className="text-lg font-bold text-accent">{d.name.charAt(0)}</span>
+              )}
+            </div>
+            <h3 className="text-sm font-bold text-text-primary truncate">{d.name}</h3>
+            {d.region && (
+              <div className="flex items-center gap-1 mt-1">
+                <MapPin className="w-3 h-3 text-text-muted" strokeWidth={1.5} />
+                <p className="text-[11px] text-text-secondary truncate">{d.region}, {d.country}</p>
+              </div>
+            )}
+            <p className="text-[11px] text-text-muted mt-1.5">
+              <strong className="text-text-primary">{bottleCount}</strong> expressions
+            </p>
+          </Link>
         ))}
       </HorizontalScroller>
     </section>
-  )
-}
-
-function DistilleryCard({ distillery }: { distillery: Distillery }) {
-  return (
-    <Link
-      href={`/distillery/${distillery.slug}`}
-      className="min-w-[260px] max-w-[260px] bg-surface rounded-card overflow-hidden shadow-card border border-border flex-shrink-0 block"
-    >
-      <div
-        className="w-full h-[120px] bg-cover bg-center relative"
-        style={{ backgroundImage: `url(${distillery.imageUrl})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-        <div className="absolute top-3 left-3 w-10 h-10 bg-surface rounded-full flex items-center justify-center shadow-lg overflow-hidden border border-border">
-          {distillery.logoUrl ? (
-            <img src={distillery.logoUrl} alt={distillery.name} className="w-7 h-7 object-contain" />
-          ) : (
-            <span className="text-[10px] font-bold text-text-primary">{distillery.logoText}</span>
-          )}
-        </div>
-      </div>
-      <div className="p-3.5">
-        <div className="flex items-center gap-1.5 mb-1">
-          <span className="text-sm font-bold text-text-primary">{distillery.name}</span>
-          {distillery.verified && (
-            <span className="w-3.5 h-3.5 bg-accent rounded-full flex items-center justify-center">
-              <CheckCircle className="w-2 h-2 text-background" strokeWidth={2.5} />
-            </span>
-          )}
-        </div>
-        <p className="text-[11px] text-text-secondary mb-1.5">{distillery.location}</p>
-        <p className="text-[11px] text-text-muted mb-2">
-          <strong className="text-text-primary">{distillery.expressionCount}</strong> Expressions
-        </p>
-        <StarRating rating={distillery.rating} count={distillery.ratingCount} size="sm" />
-      </div>
-    </Link>
   )
 }

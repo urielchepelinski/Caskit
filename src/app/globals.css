@@ -38,3 +38,13 @@ body {
     padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

@@ -20,8 +20,9 @@ interface ScanData {
     slug: string
     imageUrl: string
     distillery: string
+    rating: number | null
   }
-  suggestions?: { expressionId: number; name: string; confidence: number }[]
+  suggestions?: { expressionId: number; name: string; slug: string; confidence: number }[]
 }
 
 export default function ScanPage() {
@@ -63,6 +64,7 @@ export default function ScanPage() {
               slug: expr.slug,
               imageUrl: expr.imageUrl,
               distillery: expr.distillery?.name,
+              rating: expr.avgCommunityScore ?? null,
             },
             suggestions: result.suggestions,
           })
@@ -106,10 +108,35 @@ export default function ScanPage() {
         slug: result.slug,
         imageUrl: result.imageUrl || '',
         distillery: result.distillery || '',
+        rating: null,
       },
     })
     setState('result')
   }, [])
+
+  const [shelfStatus, setShelfStatus] = useState<string>('')
+
+  const handleAddToShelf = useCallback(async () => {
+    if (!scanData?.expressionId) return
+    try {
+      const res = await fetch('/api/collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expressionId: scanData.expressionId, status: 'owned' }),
+      })
+      if (res.ok) {
+        setShelfStatus('Added to shelf!')
+        setTimeout(() => setShelfStatus(''), 3000)
+      } else {
+        const data = await res.json()
+        setShelfStatus(data.error === 'Unauthorized' ? 'Sign in to add' : 'Failed to add')
+        setTimeout(() => setShelfStatus(''), 3000)
+      }
+    } catch {
+      setShelfStatus('Failed to add')
+      setTimeout(() => setShelfStatus(''), 3000)
+    }
+  }, [scanData])
 
   if (state === 'capturing' || state === 'idle') {
     return (
@@ -148,18 +175,27 @@ export default function ScanPage() {
       {state === 'processing' && <ScanLoading />}
 
       {state === 'result' && scanData && (
-        <ScanResult
-          expressionId={scanData.expressionId}
-          confidence={scanData.confidence}
-          method={scanData.method}
-          bottleName={scanData.bottle?.name}
-          bottleSlug={scanData.bottle?.slug}
-          bottleImage={scanData.bottle?.imageUrl}
-          distillery={scanData.bottle?.distillery}
-          suggestions={scanData.suggestions}
-          onManualSearch={handleManualSearch}
-          onRetry={handleRetry}
-        />
+        <>
+          <ScanResult
+            expressionId={scanData.expressionId}
+            confidence={scanData.confidence}
+            method={scanData.method}
+            bottleName={scanData.bottle?.name}
+            bottleSlug={scanData.bottle?.slug}
+            bottleImage={scanData.bottle?.imageUrl}
+            distillery={scanData.bottle?.distillery}
+            rating={scanData.bottle?.rating}
+            suggestions={scanData.suggestions}
+            onAddToShelf={handleAddToShelf}
+            onManualSearch={handleManualSearch}
+            onRetry={handleRetry}
+          />
+          {shelfStatus && (
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-text-primary text-background px-4 py-2 rounded-full text-sm font-medium shadow-lg z-50">
+              {shelfStatus}
+            </div>
+          )}
+        </>
       )}
 
       {state === 'error' && (
