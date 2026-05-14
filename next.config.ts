@@ -6,11 +6,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'mh-distillery.com' },
-      { protocol: 'https', hostname: 'media.getmood.io' },
-      { protocol: 'https', hostname: '*.golanispirit.com' },
-      { protocol: 'https', hostname: '*.r2.cloudflarestorage.com' },
-      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: '**' },
     ],
   },
   experimental: {

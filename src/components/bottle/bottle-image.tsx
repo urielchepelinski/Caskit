@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { BottlePlaceholder } from './bottle-placeholder'
 
 interface BottleImageProps {
@@ -8,13 +9,6 @@ interface BottleImageProps {
   alt: string
   className?: string
   placeholderClassName?: string
-}
-
-function proxyUrl(src: string): string {
-  // Already a relative/internal URL — use as-is
-  if (src.startsWith('/')) return src
-  // Route external images through our proxy to bypass hotlink blocking
-  return `/api/image-proxy?url=${encodeURIComponent(src)}`
 }
 
 export function BottleImage({ src, alt, className = 'h-[85%] w-auto object-contain', placeholderClassName = 'w-6 h-12' }: BottleImageProps) {
@@ -25,11 +19,14 @@ export function BottleImage({ src, alt, className = 'h-[85%] w-auto object-conta
   }
 
   return (
-    <img
-      src={proxyUrl(src)}
+    <Image
+      src={src}
       alt={alt}
+      width={120}
+      height={200}
       className={className}
       onError={() => setFailed(true)}
+      unoptimized={src.startsWith('/')}
     />
   )
 }

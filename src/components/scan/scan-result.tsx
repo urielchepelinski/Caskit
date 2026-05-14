@@ -1,6 +1,7 @@
 'use client'
 
 import { Star, Plus, Check, HelpCircle, Search, RotateCcw } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 interface ScanResultProps {
@@ -99,7 +100,7 @@ export function ScanResult({
         <div className="flex gap-4 items-center">
           {bottleImage && (
             <div className="w-16 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-background flex items-center justify-center">
-              <img src={`/api/image-proxy?url=${encodeURIComponent(bottleImage)}`} alt={bottleName} className="h-[90%] w-auto object-contain" />
+              <Image src={bottleImage} alt={bottleName} width={60} height={90} className="h-[90%] w-auto object-contain" />
             </div>
           )}
           <div className="flex-1">
