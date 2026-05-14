@@ -2,7 +2,7 @@
 
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock } from 'lucide-react'
 
@@ -17,7 +17,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ available, hasAny }: LoginFormProps) {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const justRegistered = searchParams.get('registered') === '1'
   const [email, setEmail] = useState('')
@@ -31,28 +30,36 @@ export function LoginForm({ available, hasAny }: LoginFormProps) {
     setLoading(true)
 
     try {
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 15000)
-      )
+      // Use getCsrfToken + direct fetch to avoid signIn() hanging bug in next-auth v5 beta
+      const csrfRes = await fetch('/api/auth/csrf')
+      const { csrfToken } = await csrfRes.json()
 
-      const result = await Promise.race([
-        signIn('credentials', { email, password, redirect: false }),
-        timeout,
-      ]) as Awaited<ReturnType<typeof signIn>>
+      const res = await fetch('/api/auth/callback/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          csrfToken,
+          email,
+          password,
+          json: 'true',
+        }),
+        redirect: 'manual',
+      })
 
-      if (result?.error) {
-        setError('Invalid email or password')
-        setLoading(false)
-        return
+      // next-auth returns a redirect (302) on success, or 200 with error URL on failure
+      if (res.status === 200) {
+        const url = res.url || ''
+        if (url.includes('error')) {
+          setError('Invalid email or password')
+          setLoading(false)
+          return
+        }
       }
 
+      // Success — force full page reload to pick up session cookie
       window.location.href = '/'
-    } catch (err) {
-      if (err instanceof Error && err.message === 'timeout') {
-        setError('Login timed out. Please try again.')
-      } else {
-        setError('Something went wrong. Please try again.')
-      }
+    } catch {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
     }
   }

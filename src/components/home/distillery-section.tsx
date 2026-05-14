@@ -47,11 +47,7 @@ export async function DistillerySection() {
             className="min-w-[200px] max-w-[200px] bg-surface rounded-card overflow-hidden shadow-card border border-border flex-shrink-0 block p-4"
           >
             <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-3">
-              {d.logoUrl ? (
-                <img src={d.logoUrl} alt={d.name} className="w-8 h-8 object-contain rounded-full" />
-              ) : (
-                <span className="text-lg font-bold text-accent">{d.name.charAt(0)}</span>
-              )}
+              <span className="text-lg font-bold text-accent">{d.name.charAt(0)}</span>
             </div>
             <h3 className="text-sm font-bold text-text-primary truncate">{d.name}</h3>
             {d.region && (

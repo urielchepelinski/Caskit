@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { Camera, X, RotateCcw, Search } from 'lucide-react'
+import { Camera, X, RotateCcw, Search, Upload } from 'lucide-react'
 
 interface CameraCaptureProps {
   onCapture: (imageData: Blob) => void
@@ -12,6 +12,7 @@ interface CameraCaptureProps {
 export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -87,6 +88,13 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
     }, 'image/jpeg', 0.85)
   }, [onCapture, stopCamera])
 
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    stopCamera()
+    onCapture(file)
+  }, [onCapture, stopCamera])
+
   const handleClose = () => {
     stopCamera()
     onClose()
@@ -120,11 +128,18 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
             <p className="text-white/70 text-sm mb-6">{error}</p>
             <div className="flex flex-col gap-3">
               <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 text-white bg-accent mx-auto px-5 py-3 rounded-xl font-medium"
+              >
+                <Upload className="w-4 h-4" />
+                Upload a photo instead
+              </button>
+              <button
                 onClick={startCamera}
                 className="flex items-center gap-2 text-accent mx-auto px-4 py-2 border border-accent/30 rounded-lg"
               >
                 <RotateCcw className="w-4 h-4" />
-                Try again
+                Try camera again
               </button>
               {onManualSearch && (
                 <button
@@ -164,16 +179,25 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
 
       {isStreaming && (
         <div className="p-6 pb-8 flex flex-col items-center gap-4">
-          <button
-            onClick={captureFrame}
-            className="w-18 h-18 rounded-full flex items-center justify-center shadow-lg"
-            style={{ width: '72px', height: '72px', background: '#C8974C' }}
-          >
-            <div
-              className="rounded-full border-4 border-white/90"
-              style={{ width: '60px', height: '60px' }}
-            />
-          </button>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"
+            >
+              <Upload className="w-5 h-5 text-white" />
+            </button>
+            <button
+              onClick={captureFrame}
+              className="rounded-full flex items-center justify-center shadow-lg"
+              style={{ width: '72px', height: '72px', background: '#C8974C' }}
+            >
+              <div
+                className="rounded-full border-4 border-white/90"
+                style={{ width: '60px', height: '60px' }}
+              />
+            </button>
+            <div className="w-12 h-12" />
+          </div>
           {onManualSearch && (
             <button
               onClick={() => { stopCamera(); onManualSearch() }}
@@ -186,6 +210,14 @@ export function CameraCapture({ onCapture, onClose, onManualSearch }: CameraCapt
         </div>
       )}
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
       <canvas ref={canvasRef} className="hidden" />
     </div>
   )
