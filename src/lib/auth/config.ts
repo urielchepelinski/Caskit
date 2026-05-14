@@ -49,23 +49,29 @@ function buildProviders(): Provider[] {
         if (!email || !password) return null
 
         try {
-          const { db } = await import('@/db')
-          const { users } = await import('@/db/schema')
-          const { eq } = await import('drizzle-orm')
-          const { verifyPassword } = await import('@/lib/auth/password')
+          const result = await Promise.race([
+            (async () => {
+              const { db } = await import('@/db')
+              const { users } = await import('@/db/schema')
+              const { eq } = await import('drizzle-orm')
+              const { verifyPassword } = await import('@/lib/auth/password')
 
-          const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
-          if (!user || !user.passwordHash) return null
+              const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1)
+              if (!user || !user.passwordHash) return null
 
-          const valid = await verifyPassword(password, user.passwordHash)
-          if (!valid) return null
+              const valid = await verifyPassword(password, user.passwordHash)
+              if (!valid) return null
 
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            image: user.avatarUrl,
-          }
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                image: user.avatarUrl,
+              }
+            })(),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+          ])
+          return result
         } catch {
           return null
         }
