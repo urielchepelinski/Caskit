@@ -6,16 +6,25 @@ export function PremiumCTA() {
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly')
   const [loading, setLoading] = useState(false)
 
+  const [error, setError] = useState('')
+
   const handleSubscribe = async () => {
     setLoading(true)
+    setError('')
     try {
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
       })
-      const { url } = await response.json()
-      if (url) window.location.href = url
+      const data = await response.json()
+      if (!response.ok) {
+        setError(data.error || 'Something went wrong')
+        return
+      }
+      if (data.url) window.location.href = data.url
+    } catch (e: any) {
+      setError(e.message || 'Network error')
     } finally {
       setLoading(false)
     }
@@ -53,6 +62,9 @@ export function PremiumCTA() {
         </button>
       </div>
 
+      {error && (
+        <p className="text-xs text-red-400 text-center mb-2">{error}</p>
+      )}
       <button
         onClick={handleSubscribe}
         disabled={loading}
