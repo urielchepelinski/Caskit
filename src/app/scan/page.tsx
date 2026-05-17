@@ -7,6 +7,7 @@ import { ScanLoading } from '@/components/scan/scan-loading'
 import { ScanResult } from '@/components/scan/scan-result'
 import { ManualSearch } from '@/components/scan/manual-search'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { useOcr } from '@/hooks/use-ocr'
 import { ArrowLeft, HelpCircle, Search, RotateCcw } from 'lucide-react'
 
 type ScanState = 'idle' | 'capturing' | 'processing' | 'result' | 'manual-search' | 'error'
@@ -30,12 +31,48 @@ export default function ScanPage() {
   const [state, setState] = useState<ScanState>('capturing')
   const [scanData, setScanData] = useState<ScanData | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [processingStage, setProcessingStage] = useState<string>('')
+  const { recognize: ocrRecognize } = useOcr()
 
   const handleCapture = useCallback(async (imageBlob: Blob) => {
     setState('processing')
     setErrorMessage('')
+    setProcessingStage('Reading label text...')
 
     try {
+      // Stage 1: Try FREE client-side OCR first
+      const ocrResult = await ocrRecognize(imageBlob)
+
+      if (ocrResult && ocrResult.text.length > 5) {
+        setProcessingStage('Matching against database...')
+
+        // Send extracted text to server for fuzzy DB matching (no Vision API cost)
+        const textResponse = await fetch('/api/scan/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: ocrResult.text }),
+        })
+
+        if (textResponse.ok) {
+          const textResult = await textResponse.json()
+
+          // If we got a confident match from OCR alone, use it
+          if (textResult.expressionId && textResult.confidence >= 0.5) {
+            await handleSuccessfulScan(textResult)
+            return
+          }
+
+          // If we got suggestions but no confident match, try Vision API for better ID
+          if (textResult.suggestions?.length > 0 && textResult.confidence >= 0.35) {
+            await handleSuccessfulScan(textResult)
+            return
+          }
+        }
+      }
+
+      // Stage 2: Fall back to Vision API (costs ~$0.001-0.003)
+      setProcessingStage('AI analyzing bottle...')
+
       const formData = new FormData()
       formData.append('image', imageBlob, 'scan.jpg')
 
@@ -50,41 +87,44 @@ export default function ScanPage() {
       }
 
       const result = await response.json()
-
-      if (result.expressionId) {
-        const exprResponse = await fetch(`/api/expressions/${result.expressionId}`)
-        if (exprResponse.ok) {
-          const expr = await exprResponse.json()
-          setScanData({
-            expressionId: result.expressionId,
-            confidence: result.confidence,
-            method: result.method,
-            bottle: {
-              name: expr.name,
-              slug: expr.slug,
-              imageUrl: expr.imageUrl,
-              distillery: expr.distillery?.name,
-              rating: expr.avgCommunityScore ?? null,
-            },
-            suggestions: result.suggestions,
-          })
-        } else {
-          setScanData(result)
-        }
-      } else {
-        setScanData(result)
-      }
-
-      setState('result')
+      await handleSuccessfulScan(result)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Recognition failed')
       setState('error')
     }
+  }, [ocrRecognize])
+
+  const handleSuccessfulScan = useCallback(async (result: any) => {
+    if (result.expressionId) {
+      const exprResponse = await fetch(`/api/expressions/${result.expressionId}`)
+      if (exprResponse.ok) {
+        const expr = await exprResponse.json()
+        setScanData({
+          expressionId: result.expressionId,
+          confidence: result.confidence,
+          method: result.method,
+          bottle: {
+            name: expr.name,
+            slug: expr.slug,
+            imageUrl: expr.imageUrl,
+            distillery: expr.distillery?.name,
+            rating: expr.avgCommunityScore ?? null,
+          },
+          suggestions: result.suggestions,
+        })
+      } else {
+        setScanData(result)
+      }
+    } else {
+      setScanData(result)
+    }
+    setState('result')
   }, [])
 
   const handleRetry = useCallback(() => {
     setScanData(null)
     setErrorMessage('')
+    setProcessingStage('')
     setState('capturing')
   }, [])
 
@@ -172,7 +212,7 @@ export default function ScanPage() {
         <h1 className="text-lg font-bold">Scan Result</h1>
       </header>
 
-      {state === 'processing' && <ScanLoading />}
+      {state === 'processing' && <ScanLoading stage={processingStage} />}
 
       {state === 'result' && scanData && (
         <>

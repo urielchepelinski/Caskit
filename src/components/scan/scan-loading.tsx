@@ -13,7 +13,11 @@ const WHISKEY_FACTS = [
   "The color of whisky comes entirely from the barrel — the spirit starts clear.",
 ]
 
-export function ScanLoading() {
+interface ScanLoadingProps {
+  stage?: string
+}
+
+export function ScanLoading({ stage }: ScanLoadingProps) {
   const [fact, setFact] = useState('')
   const [dots, setDots] = useState('')
 
@@ -35,6 +39,9 @@ export function ScanLoading() {
         <div className="absolute inset-0 rounded-full border-4 border-accent border-t-transparent animate-spin" />
       </div>
       <h2 className="text-lg font-semibold mb-2">Analyzing your bottle{dots}</h2>
+      {stage && (
+        <p className="text-xs text-accent font-medium mb-3">{stage}</p>
+      )}
       <p className="text-sm text-text-secondary text-center max-w-[260px] mt-4 font-story italic">
         {fact}
       </p>

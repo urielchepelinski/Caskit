@@ -1,25 +1,36 @@
 import { db } from '@/db'
-import { perceptualHashes, expressions, bottles, distilleries } from '@/db/schema'
-import { eq, ilike, or } from 'drizzle-orm'
+import { perceptualHashes } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 import { compareHashes, HASH_MATCH_THRESHOLD } from './phash'
+import { fuzzyMatchExpression, tokenMatchExpression } from './fuzzy-match'
 import type { RecognitionResult } from './types'
 
 export async function recognizeBottle(imageBuffer: Buffer): Promise<RecognitionResult> {
-  // Stage 0: Perceptual hash cache lookup (safe — catches errors)
+  // Stage 0: Perceptual hash cache lookup (instant, free)
   const cacheResult = await tryHashCache(imageBuffer)
   if (cacheResult) return cacheResult
 
-  // Stage 1: Claude Vision API (requires ANTHROPIC_API_KEY)
+  // Stage 1: Claude Vision → extract text + identify bottle
   const visionResult = await tryVisionApi(imageBuffer)
   if (visionResult) return visionResult
 
-  // No match found — caller should offer manual search
+  // No match found
+  return { expressionId: null, confidence: 0, method: 'manual' }
+}
+
+/**
+ * Also exported for use with client-side OCR text (Tesseract.js)
+ * Skips the Vision API call — just does fuzzy DB matching on provided text.
+ */
+export async function recognizeFromText(ocrText: string): Promise<RecognitionResult> {
+  const matchResult = await matchTextToExpression(ocrText)
+  if (matchResult) return matchResult
   return { expressionId: null, confidence: 0, method: 'manual' }
 }
 
 async function tryHashCache(imageBuffer: Buffer): Promise<RecognitionResult | null> {
   try {
-    // Dynamic import of image-hash to avoid crash if not installed
+    // @ts-ignore — optional dependency, handled by try/catch
     const { imageHash } = await import(/* webpackIgnore: true */ 'image-hash')
     const hash: string = await new Promise((resolve, reject) => {
       imageHash({ data: imageBuffer }, 16, true, (err: Error | null, data: string) => {
@@ -45,7 +56,7 @@ async function tryHashCache(imageBuffer: Buffer): Promise<RecognitionResult | nu
       }
     }
   } catch {
-    // Hash computation not available or failed — skip silently
+    // image-hash not available — skip
   }
   return null
 }
@@ -56,6 +67,8 @@ async function tryVisionApi(imageBuffer: Buffer): Promise<RecognitionResult | nu
 
   try {
     const base64 = imageBuffer.toString('base64')
+    const mediaType = 'image/jpeg'
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -64,25 +77,43 @@ async function tryVisionApi(imageBuffer: Buffer): Promise<RecognitionResult | nu
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
         messages: [{
           role: 'user',
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: 'image/jpeg', data: base64 },
+              source: { type: 'base64', media_type: mediaType, data: base64 },
             },
             {
               type: 'text',
-              text: 'Identify this whiskey bottle. Return ONLY valid JSON with these fields: distillery, bottle_name, expression, age_years (number or null), abv (number or null), volume_ml (number or null), cask_type, region, country, type (scotch/bourbon/rye/irish/japanese/world), category (single_malt/blended/grain/other), limited_edition (boolean), confidence (0-1).',
+              text: `You are a whiskey bottle identifier. Look at this image and extract:
+1. ALL text visible on the label (distillery name, expression name, age, ABV, etc.)
+2. Your best identification of the bottle
+
+Return ONLY valid JSON:
+{
+  "label_text": "all raw text you can read on the label",
+  "distillery": "distillery name",
+  "expression": "full expression/bottle name including age if visible",
+  "age_years": null or number,
+  "abv": null or number,
+  "confidence": 0.0-1.0
+}
+
+If you cannot identify this as a whiskey bottle, return:
+{"label_text": "", "distillery": "", "expression": "", "age_years": null, "abv": null, "confidence": 0}`,
             },
           ],
         }],
       }),
     })
 
-    if (!response.ok) return null
+    if (!response.ok) {
+      console.error('Vision API error:', response.status, await response.text())
+      return null
+    }
 
     const data = await response.json()
     const text = data.content?.[0]?.text
@@ -90,49 +121,99 @@ async function tryVisionApi(imageBuffer: Buffer): Promise<RecognitionResult | nu
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return null
+
     const parsed = JSON.parse(jsonMatch[0])
 
-    // Try to match to existing expression in DB by slug or name
-    const candidateSlug = slugify(`${parsed.distillery}-${parsed.bottle_name}-${parsed.expression}`)
-    const searchName = `%${parsed.bottle_name || parsed.expression}%`
+    if (!parsed.label_text && !parsed.distillery && !parsed.expression) {
+      return null // Not a whiskey bottle
+    }
 
-    const matches = await db.select({
-      expression: expressions,
-      bottle: bottles,
-      distillery: distilleries,
-    })
-      .from(expressions)
-      .innerJoin(bottles, eq(expressions.bottleId, bottles.id))
-      .innerJoin(distilleries, eq(bottles.distilleryId, distilleries.id))
-      .where(
-        or(
-          eq(expressions.slug, candidateSlug),
-          ilike(expressions.name, searchName),
-        )
-      )
-      .limit(5)
+    // Use ALL extracted info for matching
+    const searchText = [parsed.distillery, parsed.expression, parsed.label_text]
+      .filter(Boolean)
+      .join(' ')
 
-    const suggestions = matches.map(m => ({
-      expressionId: m.expression.id,
-      name: m.expression.name,
-      slug: m.expression.slug,
-      confidence: m.expression.slug === candidateSlug ? (parsed.confidence ?? 0.8) : 0.5,
-    }))
+    const matchResult = await matchTextToExpression(searchText)
 
-    const bestMatch = suggestions.find(s => s.confidence >= 0.7)
+    if (matchResult) {
+      return {
+        ...matchResult,
+        method: 'vision_api',
+        rawData: parsed,
+      }
+    }
 
+    // Vision identified something but no DB match
     return {
-      expressionId: bestMatch?.expressionId ?? null,
-      confidence: bestMatch?.confidence ?? parsed.confidence ?? 0.5,
+      expressionId: null,
+      confidence: parsed.confidence ?? 0.3,
       method: 'vision_api',
       rawData: parsed,
-      suggestions: suggestions.length > 0 ? suggestions : undefined,
     }
-  } catch {
+  } catch (err) {
+    console.error('Vision API error:', err)
     return null
   }
 }
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+/**
+ * Core matching logic: takes extracted text and finds best expression in DB.
+ * Uses pg_trgm fuzzy similarity + token matching.
+ */
+async function matchTextToExpression(text: string): Promise<RecognitionResult | null> {
+  // Try trigram similarity first (best for complete names)
+  const fuzzyMatches = await fuzzyMatchExpression(text)
+
+  if (fuzzyMatches.length > 0 && fuzzyMatches[0].score >= 0.5) {
+    return {
+      expressionId: fuzzyMatches[0].expressionId,
+      confidence: Math.min(fuzzyMatches[0].score * 1.2, 1.0), // Boost slightly
+      method: 'ocr',
+      suggestions: fuzzyMatches.slice(0, 5).map(m => ({
+        expressionId: m.expressionId,
+        name: m.name,
+        slug: m.slug,
+        confidence: m.score,
+      })),
+    }
+  }
+
+  // Fall back to token matching (better for noisy/partial OCR)
+  const tokenMatches = await tokenMatchExpression(text)
+
+  if (tokenMatches.length > 0 && tokenMatches[0].score >= 0.4) {
+    return {
+      expressionId: tokenMatches[0].expressionId,
+      confidence: tokenMatches[0].score,
+      method: 'ocr',
+      suggestions: tokenMatches.slice(0, 5).map(m => ({
+        expressionId: m.expressionId,
+        name: m.name,
+        slug: m.slug,
+        confidence: m.score,
+      })),
+    }
+  }
+
+  // Combine both result sets as suggestions even if no confident match
+  const allSuggestions = [...fuzzyMatches, ...tokenMatches]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .filter((m, i, arr) => arr.findIndex(x => x.expressionId === m.expressionId) === i)
+
+  if (allSuggestions.length > 0) {
+    return {
+      expressionId: null,
+      confidence: allSuggestions[0].score,
+      method: 'ocr',
+      suggestions: allSuggestions.map(m => ({
+        expressionId: m.expressionId,
+        name: m.name,
+        slug: m.slug,
+        confidence: m.score,
+      })),
+    }
+  }
+
+  return null
 }

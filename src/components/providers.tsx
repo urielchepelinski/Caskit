@@ -2,6 +2,7 @@
 
 import { SessionProvider } from 'next-auth/react'
 import { ToastProvider } from '@/components/ui/toast'
+import { SplashScreen } from '@/components/splash-screen'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       refetchInterval={0}
       refetchOnWindowFocus={false}
     >
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <SplashScreen>{children}</SplashScreen>
+      </ToastProvider>
     </SessionProvider>
   )
 }
